@@ -12,6 +12,7 @@ import (
 // UserUsecase mendefinisikan kontrak logika bisnis terkait User.
 type UserUsecase interface {
 	Register(input entity.RegisterInput) (entity.UserResponse, error)
+	AdminCreateUser(input entity.AdminCreateUserInput) (entity.UserResponse, error)
 	Login(input entity.LoginInput) (entity.TokenPairResponse, error)
 	RefreshToken(refreshTokenStr string) (string, error)
 	GetProfile(userID uint) (entity.UserResponse, error)
@@ -65,6 +66,43 @@ func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse,
 	}
 
 	// 6. Kembalikan data user dalam format UserResponse (tanpa password)
+	return entity.FormatUser(user), nil
+}
+
+// AdminCreateUser memproses pendaftaran pengguna baru khusus oleh Super Admin dengan menentukan role.
+func (u *userUsecase) AdminCreateUser(input entity.AdminCreateUserInput) (entity.UserResponse, error) {
+	// 1. Cek apakah email sudah terdaftar
+	existingUser, _ := u.userRepo.FindByEmail(input.Email)
+	if existingUser != nil {
+		return entity.UserResponse{}, errors.New("email sudah terdaftar, silakan gunakan email lain")
+	}
+
+	// 2. Hash password menggunakan bcrypt
+	hashedPassword, err := utils.HashPassword(input.Password)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("gagal mengamankan password")
+	}
+
+	// 3. Validasi role (superadmin, owner, admin; default: admin)
+	role := input.Role
+	if role != "superadmin" && role != "owner" && role != "admin" {
+		role = "admin"
+	}
+
+	// 4. Buat entity User baru
+	user := entity.User{
+		Name:     input.Name,
+		Email:    input.Email,
+		Password: hashedPassword,
+		Role:     role,
+	}
+
+	// 5. Simpan ke database melalui repository
+	err = u.userRepo.Create(&user)
+	if err != nil {
+		return entity.UserResponse{}, err
+	}
+
 	return entity.FormatUser(user), nil
 }
 

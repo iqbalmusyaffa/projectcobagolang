@@ -73,6 +73,7 @@ func main() {
 		superadminGroup.Use(middleware.RoleMiddleware("superadmin"))
 		{
 			superadminGroup.PUT("/change-role", userHandler.ChangeRole)
+			superadminGroup.POST("/users", userHandler.CreateUserByAdmin)
 		}
 	}
 

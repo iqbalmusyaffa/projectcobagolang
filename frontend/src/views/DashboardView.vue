@@ -300,9 +300,17 @@
                 <h2 class="text-lg font-bold text-slate-900">Manajemen Seluruh Pengguna Sistem</h2>
                 <p class="text-xs text-slate-500">Khusus Peran Superadmin & Owner (`GET /api/admin/users`)</p>
               </div>
-              <button @click="loadAllUsers" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-semibold rounded-lg transition">
-                Refresh Data
-              </button>
+              <div class="flex items-center space-x-3">
+                <button v-if="isSuperadmin" @click="isAddUserModalOpen = true" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  <span>Tambah User Baru</span>
+                </button>
+                <button @click="loadAllUsers" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-semibold rounded-lg transition">
+                  Refresh Data
+                </button>
+              </div>
             </div>
 
             <div class="p-6 overflow-x-auto">
@@ -347,6 +355,91 @@
         </template>
       </main>
     </div>
+
+    <!-- Modal Form Tambah Pengguna Baru (Khusus Super Admin) -->
+    <div v-if="isAddUserModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Tambah Pengguna Baru</h3>
+          </div>
+          <button @click="isAddUserModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="handleCreateUser" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+            <input
+              v-model="addUserForm.name"
+              type="text"
+              required
+              placeholder="Nama Pengguna"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Email</label>
+            <input
+              v-model="addUserForm.email"
+              type="email"
+              required
+              placeholder="nama@email.com"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+            <input
+              v-model="addUserForm.password"
+              type="password"
+              required
+              placeholder="Minimal 6 karakter"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Peran (Role)</label>
+            <select
+              v-model="addUserForm.role"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm bg-white font-medium"
+            >
+              <option value="admin">ADMIN (Standar)</option>
+              <option value="owner">OWNER (Pemilik Laporan)</option>
+              <option value="superadmin">SUPERADMIN (Hak Akses Penuh)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              @click="isAddUserModalOpen = false"
+              class="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition text-sm"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="isAddingUser"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow transition text-sm"
+            >
+              {{ isAddingUser ? 'Menyimpan...' : 'Simpan User Baru' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -360,7 +453,16 @@ const activeTab = ref('dashboard')
 const isDropdownOpen = ref(false)
 const isUpdating = ref(false)
 const isChangingPassword = ref(false)
+const isAddUserModalOpen = ref(false)
+const isAddingUser = ref(false)
 const allUsers = ref([])
+
+const addUserForm = reactive({
+  name: '',
+  email: '',
+  password: '',
+  role: 'admin'
+})
 
 const user = reactive({
   id: '',
@@ -499,6 +601,34 @@ const handleChangeRole = async (targetUserID, newRole) => {
     loadAllUsers()
   } catch (err) {
     showAlert(err.response?.data?.message || 'Gagal mengubah peran pengguna', false)
+  }
+}
+
+const handleCreateUser = async () => {
+  isAddingUser.value = true
+  try {
+    const res = await api.post('/superadmin/users', {
+      name: addUserForm.name,
+      email: addUserForm.email,
+      password: addUserForm.password,
+      role: addUserForm.role
+    })
+
+    showAlert(`Pengguna baru '${res.data.data.name}' (${res.data.data.role.toUpperCase()}) berhasil dibuat!`, true)
+
+    // Reset form & tutup modal
+    addUserForm.name = ''
+    addUserForm.email = ''
+    addUserForm.password = ''
+    addUserForm.role = 'admin'
+    isAddUserModalOpen.value = false
+
+    // Refresh daftar user
+    loadAllUsers()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal menambahkan pengguna baru', false)
+  } finally {
+    isAddingUser.value = false
   }
 }
 
