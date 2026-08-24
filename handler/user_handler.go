@@ -270,6 +270,34 @@ func (h *UserHandler) ChangeRole(c *gin.Context) {
 	})
 }
 
+// CreateUserByAdmin handler untuk POST /api/superadmin/users (Khusus Superadmin)
+func (h *UserHandler) CreateUserByAdmin(c *gin.Context) {
+	var input entity.AdminCreateUserInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Input tidak valid",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	userResponse, err := h.userUsecase.AdminCreateUser(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"status":  "success",
+		"message": "Pengguna baru berhasil dibuat oleh Super Admin",
+		"data":    userResponse,
+	})
+}
+
 // Logout handler untuk POST /api/logout (Protected Endpoint, Memasukkan Token ke Redis Blacklist)
 func (h *UserHandler) Logout(c *gin.Context) {
 	tokenVal, exists := c.Get("currentToken")

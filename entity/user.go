@@ -54,6 +54,14 @@ type ChangeRoleInput struct {
 	Role   string `json:"role" binding:"required"` // superadmin, owner, admin
 }
 
+// AdminCreateUserInput melambangkan data JSON saat Super Admin menambahkan pengguna baru.
+type AdminCreateUserInput struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+	Role     string `json:"role" binding:"required"` // superadmin, owner, admin
+}
+
 // RefreshTokenInput melambangkan data JSON saat meminta Access Token baru.
 type RefreshTokenInput struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
