@@ -71,6 +71,7 @@ func main() {
 		protected.POST("/profile/avatar", userHandler.UploadAvatar)
 		protected.DELETE("/profile", userHandler.DeleteAccount)
 		protected.PUT("/change-password", userHandler.ChangePassword)
+		protected.GET("/dashboard/stats", userHandler.GetDashboardStats)
 
 		// Rute Khusus Peran Superadmin & Owner
 		adminGroup := protected.Group("/admin")

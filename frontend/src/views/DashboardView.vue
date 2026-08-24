@@ -293,41 +293,90 @@
 
         <!-- TAB 1: MAIN DASHBOARD -->
         <template v-if="activeTab === 'dashboard'">
-          <!-- Stat Cards Grid Adaptif -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <div class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          <!-- Stat Cards Grid 4 Kolom (Realtime dari PostgreSQL) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Card 1: Total Users -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Peran Anda (RBAC)</p>
-                <h3 class="text-lg sm:text-xl font-bold text-indigo-600 mt-0.5 uppercase truncate">{{ user.role || 'ADMIN' }}</h3>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Total Pengguna</p>
+                <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ stats.total_users || 0 }}</h3>
               </div>
             </div>
 
-            <div class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
-              <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
-                <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Card 2: Superadmin Count -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+              <div class="p-3 bg-rose-50 text-rose-600 rounded-xl shrink-0">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Keamanan Redis & JWT</p>
-                <h3 class="text-lg sm:text-xl font-bold text-slate-800 mt-0.5 truncate">Dual Token Auth</h3>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Super Admin</p>
+                <h3 class="text-2xl font-black text-rose-600 mt-0.5">{{ stats.total_superadmin || 0 }}</h3>
               </div>
             </div>
 
-            <div class="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4 sm:col-span-2 lg:col-span-1">
-              <div class="p-3 bg-blue-50 text-blue-600 rounded-lg shrink-0">
-                <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            <!-- Card 3: Owner Count -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+              <div class="p-3 bg-purple-50 text-purple-600 rounded-xl shrink-0">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Database</p>
-                <h3 class="text-lg sm:text-xl font-bold text-slate-800 mt-0.5 truncate">PostgreSQL</h3>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Owner Laporan</p>
+                <h3 class="text-2xl font-black text-purple-600 mt-0.5">{{ stats.total_owner || 0 }}</h3>
+              </div>
+            </div>
+
+            <!-- Card 4: Admin Count -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Admin Standar</p>
+                <h3 class="text-2xl font-black text-blue-600 mt-0.5">{{ stats.total_admin || 0 }}</h3>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Grafik Visualisasi Chart.js Analytics -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Chart 1: Doughnut Chart (Distribusi Hak Akses / Role) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900">Distribusi Peran Pengguna (RBAC)</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Persentase hak akses pengguna di sistem</p>
+                </div>
+                <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-lg">Chart.js</span>
+              </div>
+
+              <div class="relative h-64 sm:h-72 flex items-center justify-center">
+                <canvas ref="roleDoughnutChartCanvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Bar Chart (Komparasi Jumlah User Berdasarkan Role) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900">Statistik Pengguna Berdasarkan Role</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Jumlah akun aktif per kategori peran</p>
+                </div>
+                <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-lg">Realtime</span>
+              </div>
+
+              <div class="relative h-64 sm:h-72 flex items-center justify-center">
+                <canvas ref="roleBarChartCanvas"></canvas>
               </div>
             </div>
           </div>
@@ -973,9 +1022,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
+import Chart from 'chart.js/auto'
 
 const router = useRouter()
 const activeTab = ref('dashboard')
@@ -998,6 +1048,18 @@ const avatarModalName = ref('')
 const avatarModalUrl = ref('')
 const selectedFile = ref(null)
 const allUsers = ref([])
+
+const stats = reactive({
+  total_users: 0,
+  total_superadmin: 0,
+  total_owner: 0,
+  total_admin: 0
+})
+
+const roleDoughnutChartCanvas = ref(null)
+const roleBarChartCanvas = ref(null)
+let doughnutChartInstance = null
+let barChartInstance = null
 
 const isNotificationOpen = ref(false)
 const notifications = ref([
@@ -1423,14 +1485,98 @@ const handleAdminDeleteUser = async () => {
   }
 }
 
+const loadDashboardStats = async () => {
+  try {
+    const res = await api.get('/dashboard/stats')
+    const d = res.data.data
+    stats.total_users = d.total_users || 0
+    stats.total_superadmin = d.total_superadmin || 0
+    stats.total_owner = d.total_owner || 0
+    stats.total_admin = d.total_admin || 0
+
+    await nextTick()
+    renderCharts()
+  } catch (err) {
+    // Ignore error
+  }
+}
+
+const renderCharts = () => {
+  if (doughnutChartInstance) doughnutChartInstance.destroy()
+  if (barChartInstance) barChartInstance.destroy()
+
+  const labels = ['SUPERADMIN', 'OWNER', 'ADMIN']
+  const dataValues = [stats.total_superadmin, stats.total_owner, stats.total_admin]
+
+  if (roleDoughnutChartCanvas.value) {
+    doughnutChartInstance = new Chart(roleDoughnutChartCanvas.value, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataValues,
+          backgroundColor: ['#e11d48', '#9333ea', '#2563eb'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { size: 12, weight: 'bold' }, padding: 15 }
+          }
+        }
+      }
+    })
+  }
+
+  if (roleBarChartCanvas.value) {
+    barChartInstance = new Chart(roleBarChartCanvas.value, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Jumlah Pengguna',
+          data: dataValues,
+          backgroundColor: ['rgba(225, 29, 72, 0.85)', 'rgba(147, 51, 234, 0.85)', 'rgba(37, 99, 235, 0.85)'],
+          borderRadius: 8,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    })
+  }
+}
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'dashboard') {
+    loadDashboardStats()
+  } else if (newTab === 'users') {
+    loadAllUsers()
+  }
+})
+
 const handleSyncData = async () => {
   isSyncing.value = true
   try {
     await loadUserProfile()
+    await loadDashboardStats()
     if (canManageUsers.value) {
       await loadAllUsers()
     }
-    showAlert('Data berhasil disinkronkan dari database PostgreSQL!', true)
+    showAlert('Data & statistik berhasil disinkronkan dari database PostgreSQL!', true)
   } catch (err) {
     showAlert('Gagal menyinkronkan data dari server', false)
   } finally {
@@ -1480,10 +1626,13 @@ const closeDropdownOnOutsideClick = () => {
 
 onMounted(() => {
   loadUserProfile()
+  loadDashboardStats()
   window.addEventListener('click', closeDropdownOnOutsideClick)
 })
 
 onUnmounted(() => {
+  if (doughnutChartInstance) doughnutChartInstance.destroy()
+  if (barChartInstance) barChartInstance.destroy()
   window.removeEventListener('click', closeDropdownOnOutsideClick)
 })
 </script>
