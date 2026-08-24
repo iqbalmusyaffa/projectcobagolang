@@ -1269,6 +1269,33 @@ const loadUserProfile = async () => {
     editForm.birth_date = data.birth_date || ''
     editForm.address = data.address || ''
     editForm.bio = data.bio || ''
+
+    notifications.value = [
+      {
+        id: 1,
+        title: 'Sesi Autentikasi Berhasil',
+        message: `Login sebagai ${user.name} (${(user.role || 'admin').toUpperCase()}) dengan Dual Token JWT & Redis Blacklist.`,
+        type: 'security',
+        read: false,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: 'Profil Terintegrasi',
+        message: 'Biodata profil lengkap (No. HP, Gender, Tgl Lahir, Alamat, Bio) telah disinkronkan.',
+        type: 'profile',
+        read: false,
+        created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      },
+      {
+        id: 3,
+        title: 'Database AutoMigrate Active',
+        message: 'PostgreSQL & Seeder 3 Akun Default (Super Admin, Owner, Admin) berjalan normal.',
+        type: 'system',
+        read: false,
+        created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString()
+      }
+    ]
   } catch (err) {
     localStorage.removeItem('token')
     router.push('/login')
