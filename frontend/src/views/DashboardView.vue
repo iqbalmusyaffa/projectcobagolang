@@ -34,18 +34,15 @@
             <span>Manajemen User</span>
           </a>
 
-          <a href="#section-profile" @click="activeTab = 'dashboard'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <!-- Halaman Profil Saya -->
+          <a href="#" @click.prevent="activeTab = 'profile'" :class="[
+            'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
+            activeTab === 'profile' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <span>Edit Profil</span>
-          </a>
-
-          <a href="#section-password" @click="activeTab = 'dashboard'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span>Ganti Password</span>
+            <span>Profil Saya</span>
           </a>
         </nav>
       </div>
@@ -60,9 +57,9 @@
       </div>
     </aside>
 
-    <!-- Mobile Drawer Off-Canvas Sidebar (Tampil di Layar Smartphone/Tablet <768px) -->
+    <!-- Mobile Drawer Off-Canvas Sidebar (<768px) -->
     <div v-if="isMobileSidebarOpen" class="fixed inset-0 z-50 flex md:hidden">
-      <!-- Backdrop Overlay dengan Blur -->
+      <!-- Backdrop Overlay -->
       <div @click="isMobileSidebarOpen = false" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
 
       <!-- Drawer Content -->
@@ -105,18 +102,14 @@
             <span>Manajemen User</span>
           </a>
 
-          <a href="#section-profile" @click="activeTab = 'dashboard'; isMobileSidebarOpen = false" class="flex items-center space-x-3 px-3 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <a href="#" @click.prevent="activeTab = 'profile'; isMobileSidebarOpen = false" :class="[
+            'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
+            activeTab === 'profile' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <span>Edit Profil</span>
-          </a>
-
-          <a href="#section-password" @click="activeTab = 'dashboard'; isMobileSidebarOpen = false" class="flex items-center space-x-3 px-3 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span>Ganti Password</span>
+            <span>Profil Saya</span>
           </a>
         </nav>
 
@@ -144,7 +137,7 @@
           </button>
 
           <h1 class="text-base sm:text-xl font-bold text-slate-800 truncate">
-            {{ activeTab === 'users' ? 'Manajemen Pengguna (RBAC)' : 'Overview Dashboard Vue 3' }}
+            {{ activeTab === 'users' ? 'Manajemen Pengguna (RBAC)' : activeTab === 'profile' ? 'Pengaturan Profil Saya' : 'Overview Dashboard Vue 3' }}
           </h1>
         </div>
 
@@ -159,9 +152,13 @@
               </div>
               <div class="text-xs text-slate-500">{{ user.email || 'Loading...' }}</div>
             </div>
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center shadow text-sm sm:text-base">
-              {{ avatarInitial }}
+            
+            <!-- Header Avatar Image / Initial -->
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center shadow text-sm sm:text-base overflow-hidden border border-indigo-200 shrink-0">
+              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+              <span v-else>{{ avatarInitial }}</span>
             </div>
+
             <svg class="w-4 h-4 text-slate-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -175,18 +172,11 @@
               <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
             </div>
 
-            <a href="#section-profile" @click="activeTab = 'dashboard'; isDropdownOpen = false" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
+            <a href="#" @click.prevent="activeTab = 'profile'; isDropdownOpen = false" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
               <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
-              Edit Profil
-            </a>
-
-            <a href="#section-password" @click="activeTab = 'dashboard'; isDropdownOpen = false" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
-              <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
-              Ganti Password
+              Profil Saya
             </a>
 
             <div class="border-t border-slate-100 my-1"></div>
@@ -201,7 +191,7 @@
         </div>
       </header>
 
-      <!-- Main Body Responsif (HP, Tablet, Laptop) -->
+      <!-- Main Body Responsif -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
         <!-- Reaktif Alert Box -->
         <div v-if="alert.message" :class="[
@@ -252,125 +242,254 @@
             </div>
           </div>
 
-          <!-- User Profile Information Card -->
-          <div id="section-profile" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <h2 class="text-base sm:text-lg font-bold text-slate-900">Informasi Pengguna (Profile Vue 3)</h2>
-              <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
+          <!-- User Quick Overview Card -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h2 class="text-base sm:text-lg font-bold text-slate-900">Ringkasan Sesi Pengguna</h2>
+              <button @click="activeTab = 'profile'" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">Buka Profil Saya &rarr;</button>
             </div>
-
             <div class="p-5 sm:p-6">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">User ID</label>
-                  <p class="text-sm sm:text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.id || '-' }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.id || '-' }}</p>
                 </div>
-
                 <div>
                   <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
-                  <p class="text-sm sm:text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.name || '-' }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.name || '-' }}</p>
                 </div>
-
                 <div>
                   <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</label>
-                  <p class="text-sm sm:text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.email || '-' }}</p>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.email || '-' }}</p>
                 </div>
-
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nomor Telepon / HP</label>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.phone || '-' }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.gender || '-' }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ user.birth_date || '-' }}</p>
+                </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Hak Akses / Role</label>
-                  <p class="text-sm sm:text-base font-bold text-indigo-700 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200 uppercase truncate">{{ user.role || 'ADMIN' }}</p>
+                  <p class="text-sm font-bold text-indigo-700 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200 uppercase truncate">{{ user.role || 'ADMIN' }}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Forms Section: Edit Profil & Ganti Password -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Form Edit Profil Card -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-              <div>
-                <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
-                  <h3 class="text-base sm:text-lg font-bold text-slate-900">Edit Profil</h3>
-                  <p class="text-xs text-slate-500 mt-0.5">Perbarui nama dan alamat email reaktif</p>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Terakhir Diperbarui</label>
+                  <p class="text-sm font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200 truncate">{{ formattedUpdatedAt }}</p>
                 </div>
-
-                <form @submit.prevent="handleUpdateProfile" class="p-5 sm:p-6 space-y-4">
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
-                    <input
-                      v-model="editForm.name"
-                      type="text"
-                      required
-                      class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Email</label>
-                    <input
-                      v-model="editForm.email"
-                      type="email"
-                      required
-                      class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    :disabled="isUpdating"
-                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm"
-                  >
-                    {{ isUpdating ? 'Menyimpan...' : 'Simpan Perubahan Profil' }}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <!-- Form Ganti Password Card -->
-            <div id="section-password" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
-              <div>
-                <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
-                  <h3 class="text-base sm:text-lg font-bold text-slate-900">Ganti Password</h3>
-                  <p class="text-xs text-slate-500 mt-0.5">Perbarui kata sandi akun Anda</p>
-                </div>
-
-                <form @submit.prevent="handleChangePassword" class="p-5 sm:p-6 space-y-4">
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Saat Ini</label>
-                    <input
-                      v-model="passwordForm.old_password"
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                      class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Baru</label>
-                    <input
-                      v-model="passwordForm.new_password"
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                      class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    :disabled="isChangingPassword"
-                    class="w-full py-3 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm"
-                  >
-                    {{ isChangingPassword ? 'Memproses...' : 'Perbarui Password' }}
-                  </button>
-                </form>
               </div>
             </div>
           </div>
         </template>
 
-        <!-- TAB 2: MANAJEMEN USER (KHUSUS SUPERADMIN & OWNER) -->
+        <!-- TAB 2: HALAMAN PROFIL SAYA (DEDICATED PAGE) -->
+        <template v-if="activeTab === 'profile'">
+          <div class="space-y-6">
+            <!-- Header Profile Card + Upload Avatar -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 text-center sm:text-left">
+                <!-- Avatar Preview -->
+                <div class="relative">
+                  <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-100 shadow-md" />
+                  <div v-else class="w-24 h-24 rounded-full bg-indigo-600 text-white font-extrabold text-3xl flex items-center justify-center border-4 border-indigo-100 shadow-md">
+                    {{ avatarInitial }}
+                  </div>
+                </div>
+
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900">{{ user.name || '-' }}</h2>
+                  <p class="text-sm text-slate-500">{{ user.email || '-' }}</p>
+                  <div class="mt-2 flex items-center space-x-2">
+                    <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
+                    <span v-if="user.updated_at" class="text-[11px] text-slate-400">Diuji: {{ new Date(user.updated_at).toLocaleDateString('id-ID') }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Form Upload Avatar File -->
+              <div class="w-full md:w-auto bg-slate-50 p-4 rounded-xl border border-slate-200 text-center sm:text-left">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Unggah Foto Profil (Avatar)</label>
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                  <input 
+                    type="file" 
+                    @change="handleFileSelected" 
+                    accept="image/png, image/jpeg, image/jpg, image/webp" 
+                    class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  />
+                  <button 
+                    @click="handleUploadAvatar" 
+                    :disabled="!selectedFile || isUploadingAvatar"
+                    class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-semibold rounded-lg shadow transition shrink-0"
+                  >
+                    {{ isUploadingAvatar ? 'Mengunggah...' : 'Unggah Foto' }}
+                  </button>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-2">Format: JPG, PNG, WEBP (Maksimal 2MB)</p>
+              </div>
+            </div>
+
+            <!-- Form Action: Edit Profil & Ganti Password -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Form Edit Profil Card -->
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900">Edit Profil</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Perbarui biodata dan informasi kontak akun Anda</p>
+                  </div>
+
+                  <form @submit.prevent="handleUpdateProfile" class="p-5 sm:p-6 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                        <input
+                          v-model="editForm.name"
+                          type="text"
+                          required
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Email</label>
+                        <input
+                          v-model="editForm.email"
+                          type="email"
+                          required
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nomor Telepon / HP</label>
+                        <input
+                          v-model="editForm.phone"
+                          type="text"
+                          placeholder="081234567890"
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                        <select
+                          v-model="editForm.gender"
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+                        >
+                          <option value="">-- Pilih --</option>
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+                        <input
+                          v-model="editForm.birth_date"
+                          type="date"
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Lengkap</label>
+                      <textarea
+                        v-model="editForm.address"
+                        rows="2"
+                        placeholder="Alamat domisili Anda"
+                        class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Bio / Deskripsi Singkat</label>
+                      <textarea
+                        v-model="editForm.bio"
+                        rows="2"
+                        placeholder="Tuliskan bio atau informasi singkat mengenai Anda"
+                        class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                      ></textarea>
+                    </div>
+
+                    <button
+                      type="submit"
+                      :disabled="isUpdating"
+                      class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm"
+                    >
+                      {{ isUpdating ? 'Menyimpan...' : 'Simpan Perubahan Profil' }}
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Form Ganti Password Card -->
+              <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900">Ganti Password</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Perbarui kata sandi akun Anda</p>
+                  </div>
+
+                  <form @submit.prevent="handleChangePassword" class="p-5 sm:p-6 space-y-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Saat Ini</label>
+                      <input
+                        v-model="passwordForm.old_password"
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Baru</label>
+                      <input
+                        v-model="passwordForm.new_password"
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      :disabled="isChangingPassword"
+                      class="w-full py-3 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm"
+                    >
+                      {{ isChangingPassword ? 'Memproses...' : 'Perbarui Password' }}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zona Bahaya / Danger Zone: Soft Delete Akun -->
+            <div class="bg-rose-50/60 rounded-xl border border-rose-200 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="text-base font-bold text-rose-900">Zona Bahaya (Danger Zone)</h3>
+                <p class="text-xs text-rose-700 mt-1">Hapus akun Anda secara Soft Delete. Data akun Anda akan dinonaktifkan dari sistem.</p>
+              </div>
+              <button 
+                @click="isDeleteModalOpen = true"
+                class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow transition shrink-0"
+              >
+                Hapus Akun Saya
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- TAB 3: MANAJEMEN USER (KHUSUS SUPERADMIN & OWNER) -->
         <template v-if="activeTab === 'users' && canManageUsers">
           <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-5 sm:px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -401,7 +520,7 @@
                     <th class="py-3 px-4">Email</th>
                     <th class="py-3 px-4">Peran (Role)</th>
                     <th class="py-3 px-4">Terdaftar</th>
-                    <th v-if="isSuperadmin" class="py-3 px-4 text-center">Aksi (Ubah Role)</th>
+                    <th v-if="isSuperadmin" class="py-3 px-4 text-center">Aksi Pengelola</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
@@ -414,17 +533,42 @@
                     </td>
                     <td class="py-3 px-4 text-xs text-slate-500">{{ new Date(u.created_at).toLocaleDateString('id-ID') }}</td>
                     
-                    <!-- Tombol Ubah Role khusus Superadmin -->
+                    <!-- Tombol Aksi khusus Superadmin (Ubah Role, Edit Data, Hapus User) -->
                     <td v-if="isSuperadmin" class="py-3 px-4 text-center">
-                      <select
-                        :value="u.role || 'admin'"
-                        @change="handleChangeRole(u.id, $event.target.value)"
-                        class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-md outline-none bg-white font-medium"
-                      >
-                        <option value="admin">ADMIN</option>
-                        <option value="owner">OWNER</option>
-                        <option value="superadmin">SUPERADMIN</option>
-                      </select>
+                      <div class="flex items-center justify-center space-x-2">
+                        <!-- Quick Role Selector -->
+                        <select
+                          :value="u.role || 'admin'"
+                          @change="handleChangeRole(u.id, $event.target.value)"
+                          class="px-2 py-1 text-xs border border-slate-300 rounded-md outline-none bg-white font-medium"
+                        >
+                          <option value="admin">ADMIN</option>
+                          <option value="owner">OWNER</option>
+                          <option value="superadmin">SUPERADMIN</option>
+                        </select>
+
+                        <!-- Tombol Edit User -->
+                        <button 
+                          @click="openAdminEditModal(u)" 
+                          class="p-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg transition"
+                          title="Edit Data Pengguna"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                        </button>
+
+                        <!-- Tombol Hapus User -->
+                        <button 
+                          @click="openAdminDeleteModal(u)" 
+                          class="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition"
+                          title="Hapus Pengguna (Soft Delete)"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -519,6 +663,172 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Hapus Akun Mandiri (Soft Delete) -->
+    <div v-if="isDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center space-x-3 text-rose-600">
+          <div class="p-2 bg-rose-100 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Konfirmasi Hapus Akun</h3>
+        </div>
+        <p class="text-sm text-slate-600">Apakah Anda yakin ingin menghapus akun Anda? Setelah dihapus, Anda akan otomatis ter-logout dan data akun akan dinonaktifkan (Soft Delete).</p>
+        <div class="flex items-center justify-end space-x-3 pt-2">
+          <button @click="isDeleteModalOpen = false" class="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition text-sm">
+            Batal
+          </button>
+          <button @click="handleDeleteAccount" :disabled="isDeletingAccount" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow transition text-sm">
+            {{ isDeletingAccount ? 'Menghapus...' : 'Ya, Hapus Akun' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Edit Data Pengguna (Khusus Super Admin) -->
+    <div v-if="isAdminEditModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <h3 class="text-base sm:text-lg font-bold text-slate-900">Edit Data Pengguna #{{ adminEditForm.user_id }}</h3>
+          <button @click="isAdminEditModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="handleAdminUpdateUser" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+            <input
+              v-model="adminEditForm.name"
+              type="text"
+              required
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Email</label>
+            <input
+              v-model="adminEditForm.email"
+              type="email"
+              required
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Peran (Role)</label>
+              <select
+                v-model="adminEditForm.role"
+                class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white font-medium"
+              >
+                <option value="admin">ADMIN (Standar)</option>
+                <option value="owner">OWNER (Pemilik Laporan)</option>
+                <option value="superadmin">SUPERADMIN (Hak Akses Penuh)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nomor Telepon / HP</label>
+              <input
+                v-model="adminEditForm.phone"
+                type="text"
+                placeholder="081234567890"
+                class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+              <select
+                v-model="adminEditForm.gender"
+                class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+              >
+                <option value="">-- Pilih --</option>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+              <input
+                v-model="adminEditForm.birth_date"
+                type="date"
+                class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Lengkap</label>
+            <textarea
+              v-model="adminEditForm.address"
+              rows="2"
+              placeholder="Alamat domisili"
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            ></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Bio / Deskripsi</label>
+            <textarea
+              v-model="adminEditForm.bio"
+              rows="2"
+              placeholder="Catatan / Bio pengguna"
+              class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            ></textarea>
+          </div>
+
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              @click="isAdminEditModalOpen = false"
+              class="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 text-sm"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="isAdminUpdating"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow text-sm"
+            >
+              {{ isAdminUpdating ? 'Menyimpan...' : 'Simpan Perubahan' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Pengguna (Khusus Super Admin) -->
+    <div v-if="isAdminDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center space-x-3 text-rose-600">
+          <div class="p-2 bg-rose-100 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Hapus Pengguna</h3>
+        </div>
+        <p class="text-sm text-slate-600">Apakah Anda yakin ingin menghapus pengguna <strong class="text-slate-900">{{ adminDeleteTarget.name }}</strong> (ID: #{{ adminDeleteTarget.id }})? Pengguna ini akan di-Soft Delete dari sistem.</p>
+        <div class="flex items-center justify-end space-x-3 pt-2">
+          <button @click="isAdminDeleteModalOpen = false" class="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 text-sm">
+            Batal
+          </button>
+          <button @click="handleAdminDeleteUser" :disabled="isAdminDeleting" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow text-sm">
+            {{ isAdminDeleting ? 'Menghapus...' : 'Ya, Hapus Pengguna' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -535,6 +845,14 @@ const isUpdating = ref(false)
 const isChangingPassword = ref(false)
 const isAddUserModalOpen = ref(false)
 const isAddingUser = ref(false)
+const isUploadingAvatar = ref(false)
+const isDeleteModalOpen = ref(false)
+const isDeletingAccount = ref(false)
+const isAdminEditModalOpen = ref(false)
+const isAdminUpdating = ref(false)
+const isAdminDeleteModalOpen = ref(false)
+const isAdminDeleting = ref(false)
+const selectedFile = ref(null)
 const allUsers = ref([])
 
 const addUserForm = reactive({
@@ -544,17 +862,46 @@ const addUserForm = reactive({
   role: 'admin'
 })
 
+const adminEditForm = reactive({
+  user_id: 0,
+  name: '',
+  email: '',
+  role: 'admin',
+  phone: '',
+  gender: '',
+  birth_date: '',
+  address: '',
+  bio: ''
+})
+
+const adminDeleteTarget = reactive({
+  id: 0,
+  name: ''
+})
+
 const user = reactive({
   id: '',
   name: '',
   email: '',
   role: 'admin',
-  created_at: ''
+  avatar: '',
+  phone: '',
+  gender: '',
+  birth_date: '',
+  address: '',
+  bio: '',
+  created_at: '',
+  updated_at: ''
 })
 
 const editForm = reactive({
   name: '',
-  email: ''
+  email: '',
+  phone: '',
+  gender: '',
+  birth_date: '',
+  address: '',
+  bio: ''
 })
 
 const passwordForm = reactive({
@@ -569,6 +916,35 @@ const alert = reactive({
 
 const avatarInitial = computed(() => {
   return user.name ? user.name.charAt(0).toUpperCase() : 'U'
+})
+
+const avatarUrl = computed(() => {
+  if (user.avatar) {
+    if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+      return user.avatar
+    }
+    return `http://localhost:8080/${user.avatar}`
+  }
+  return null
+})
+
+const formattedUpdatedAt = computed(() => {
+  if (!user.updated_at || user.updated_at.startsWith('0001-01-01')) {
+    return 'Belum pernah diperbarui'
+  }
+  try {
+    const d = new Date(user.updated_at)
+    if (isNaN(d.getTime())) return 'Belum pernah diperbarui'
+    return d.toLocaleString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (e) {
+    return 'Belum pernah diperbarui'
+  }
 })
 
 const isSuperadmin = computed(() => {
@@ -608,10 +984,22 @@ const loadUserProfile = async () => {
     user.name = data.name
     user.email = data.email
     user.role = data.role || 'admin'
+    user.avatar = data.avatar || ''
+    user.phone = data.phone || ''
+    user.gender = data.gender || ''
+    user.birth_date = data.birth_date || ''
+    user.address = data.address || ''
+    user.bio = data.bio || ''
     user.created_at = data.created_at
+    user.updated_at = data.updated_at
 
     editForm.name = data.name
     editForm.email = data.email
+    editForm.phone = data.phone || ''
+    editForm.gender = data.gender || ''
+    editForm.birth_date = data.birth_date || ''
+    editForm.address = data.address || ''
+    editForm.bio = data.bio || ''
   } catch (err) {
     localStorage.removeItem('token')
     router.push('/login')
@@ -634,16 +1022,58 @@ watch(activeTab, (newTab) => {
   }
 })
 
+const handleFileSelected = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+  }
+}
+
+const handleUploadAvatar = async () => {
+  if (!selectedFile.value) return
+  isUploadingAvatar.value = true
+  const formData = new FormData()
+  formData.append('avatar', selectedFile.value)
+
+  try {
+    const res = await api.post('/profile/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    user.avatar = res.data.data.avatar
+    showAlert('Foto profil berhasil diperbarui!', true)
+    selectedFile.value = null
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal mengunggah foto profil', false)
+  } finally {
+    isUploadingAvatar.value = false
+  }
+}
+
 const handleUpdateProfile = async () => {
   isUpdating.value = true
   try {
     const res = await api.put('/profile', {
       name: editForm.name,
-      email: editForm.email
+      email: editForm.email,
+      phone: editForm.phone,
+      gender: editForm.gender,
+      birth_date: editForm.birth_date,
+      address: editForm.address,
+      bio: editForm.bio
     })
 
-    user.name = res.data.data.name
-    user.email = res.data.data.email
+    const d = res.data.data
+    user.name = d.name
+    user.email = d.email
+    user.phone = d.phone || ''
+    user.gender = d.gender || ''
+    user.birth_date = d.birth_date || ''
+    user.address = d.address || ''
+    user.bio = d.bio || ''
+    user.updated_at = d.updated_at
     showAlert('Profil Vue 3 Anda berhasil diperbarui!', true)
   } catch (err) {
     showAlert(err.response?.data?.message || 'Gagal memperbarui profil', false)
@@ -667,6 +1097,25 @@ const handleChangePassword = async () => {
     showAlert(err.response?.data?.message || 'Gagal mengganti password', false)
   } finally {
     isChangingPassword.value = false
+  }
+}
+
+const handleDeleteAccount = async () => {
+  isDeletingAccount.value = true
+  try {
+    await api.delete('/profile')
+    showAlert('Akun Anda berhasil dihapus (Soft Delete).', true)
+    setTimeout(() => {
+      localStorage.removeItem('token')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      router.push('/login')
+    }, 1500)
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal menghapus akun', false)
+  } finally {
+    isDeletingAccount.value = false
+    isDeleteModalOpen.value = false
   }
 }
 
@@ -696,19 +1145,74 @@ const handleCreateUser = async () => {
 
     showAlert(`Pengguna baru '${res.data.data.name}' (${res.data.data.role.toUpperCase()}) berhasil dibuat!`, true)
 
-    // Reset form & tutup modal
     addUserForm.name = ''
     addUserForm.email = ''
     addUserForm.password = ''
     addUserForm.role = 'admin'
     isAddUserModalOpen.value = false
 
-    // Refresh daftar user
     loadAllUsers()
   } catch (err) {
     showAlert(err.response?.data?.message || 'Gagal menambahkan pengguna baru', false)
   } finally {
     isAddingUser.value = false
+  }
+}
+
+const openAdminEditModal = (targetUser) => {
+  adminEditForm.user_id = targetUser.id
+  adminEditForm.name = targetUser.name
+  adminEditForm.email = targetUser.email
+  adminEditForm.role = targetUser.role || 'admin'
+  adminEditForm.phone = targetUser.phone || ''
+  adminEditForm.gender = targetUser.gender || ''
+  adminEditForm.birth_date = targetUser.birth_date || ''
+  adminEditForm.address = targetUser.address || ''
+  adminEditForm.bio = targetUser.bio || ''
+  isAdminEditModalOpen.value = true
+}
+
+const handleAdminUpdateUser = async () => {
+  isAdminUpdating.value = true
+  try {
+    const res = await api.put('/superadmin/users', {
+      user_id: adminEditForm.user_id,
+      name: adminEditForm.name,
+      email: adminEditForm.email,
+      role: adminEditForm.role,
+      phone: adminEditForm.phone,
+      gender: adminEditForm.gender,
+      birth_date: adminEditForm.birth_date,
+      address: adminEditForm.address,
+      bio: adminEditForm.bio
+    })
+    showAlert(`Data pengguna '${res.data.data.name}' berhasil diperbarui!`, true)
+    isAdminEditModalOpen.value = false
+    loadAllUsers()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal mengedit data pengguna', false)
+  } finally {
+    isAdminUpdating.value = false
+  }
+}
+
+const openAdminDeleteModal = (targetUser) => {
+  adminDeleteTarget.id = targetUser.id
+  adminDeleteTarget.name = targetUser.name
+  isAdminDeleteModalOpen.value = true
+}
+
+const handleAdminDeleteUser = async () => {
+  isAdminDeleting.value = true
+  try {
+    await api.delete(`/superadmin/users/${adminDeleteTarget.id}`)
+    showAlert(`Pengguna '${adminDeleteTarget.name}' berhasil dihapus (Soft Delete)!`, true)
+    isAdminDeleteModalOpen.value = false
+    loadAllUsers()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal menghapus pengguna', false)
+  } finally {
+    isAdminDeleting.value = false
   }
 }
 

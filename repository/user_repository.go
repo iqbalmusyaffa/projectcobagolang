@@ -13,6 +13,7 @@ type UserRepository interface {
 	FindByID(id uint) (*entity.User, error)
 	FindAll() ([]entity.User, error)
 	Update(user *entity.User) error
+	Delete(id uint) error
 }
 
 // userRepository implementasi konkret dari UserRepository yang menggunakan GORM.
@@ -60,4 +61,9 @@ func (r *userRepository) FindAll() ([]entity.User, error) {
 // Update memperbarui data User di database.
 func (r *userRepository) Update(user *entity.User) error {
 	return r.db.Save(user).Error
+}
+
+// Delete melakukan Soft Delete data User berdasarkan Primary Key (ID).
+func (r *userRepository) Delete(id uint) error {
+	return r.db.Delete(&entity.User{}, id).Error
 }
