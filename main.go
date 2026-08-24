@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Memulai Aplikasi Auth Clean Architecture ===")
+	fmt.Println("=== Memulai Server REST API Golang (Clean Architecture) ===")
 
 	// 1. Inisialisasi Database PostgreSQL
 	db := config.InitDB()
@@ -24,17 +24,22 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(userRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
 
-	// 3. Inisialisasi Router Gin & Load HTML Templates
+	// 3. Inisialisasi Router Gin & Global Middleware
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware())
 	r.LoadHTMLGlob("views/*")
 
-	// Web Routes (Frontend Pages)
-	r.GET("/", func(c *gin.Context) {
-		c.Redirect(302, "/login")
+	// Web Routes (API Status & Auto-Redirect ke Vue 3 Frontend)
+	r.GET("/", userHandler.ShowAPIStatus)
+	r.GET("/login", func(c *gin.Context) {
+		c.Redirect(302, "http://localhost:5173/login")
 	})
-	r.GET("/login", userHandler.ShowLoginPage)
-	r.GET("/register", userHandler.ShowRegisterPage)
-	r.GET("/dashboard", userHandler.ShowDashboardPage)
+	r.GET("/register", func(c *gin.Context) {
+		c.Redirect(302, "http://localhost:5173/register")
+	})
+	r.GET("/dashboard", func(c *gin.Context) {
+		c.Redirect(302, "http://localhost:5173/dashboard")
+	})
 
 	// API Routes Publik (Tanpa Autentikasi)
 	api := r.Group("/api")
@@ -54,7 +59,7 @@ func main() {
 
 	// 4. Jalankan Server HTTP pada port 8080
 	port := ":8080"
-	fmt.Printf("Server berjalan di http://localhost%s\n", port)
+	fmt.Printf("REST API Golang berjalan di http://localhost%s\n", port)
 	if err := r.Run(port); err != nil {
 		log.Fatalf("Gagal menjalankan server: %v", err)
 	}

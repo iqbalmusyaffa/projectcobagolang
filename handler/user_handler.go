@@ -192,19 +192,25 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	})
 }
 
-// ShowLoginPage merender halaman HTML Login
+// ShowAPIStatus merender halaman status REST API Golang
+func (h *UserHandler) ShowAPIStatus(c *gin.Context) {
+	c.HTML(http.StatusOK, "index.html", nil)
+}
+
+// ShowLoginPage merender halaman status API
 func (h *UserHandler) ShowLoginPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "login.html", nil)
+	c.HTML(http.StatusOK, "index.html", nil)
 }
 
-// ShowRegisterPage merender halaman HTML Register
+// ShowRegisterPage merender halaman status API
 func (h *UserHandler) ShowRegisterPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "register.html", nil)
+	c.HTML(http.StatusOK, "index.html", nil)
 }
 
-// ShowDashboardPage merender halaman HTML Dashboard
+// ShowDashboardPage merender halaman status API
 func (h *UserHandler) ShowDashboardPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "dashboard.html", nil)
+	c.HTML(http.StatusOK, "index.html", nil)
 }
+
 
 
