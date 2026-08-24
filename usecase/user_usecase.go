@@ -13,14 +13,18 @@ import (
 type UserUsecase interface {
 	Register(input entity.RegisterInput) (entity.UserResponse, error)
 	AdminCreateUser(input entity.AdminCreateUserInput) (entity.UserResponse, error)
+	AdminUpdateUser(input entity.AdminUpdateUserInput) (entity.UserResponse, error)
+	AdminDeleteUser(targetUserID uint) error
 	Login(input entity.LoginInput) (entity.TokenPairResponse, error)
 	RefreshToken(refreshTokenStr string) (string, error)
 	GetProfile(userID uint) (entity.UserResponse, error)
 	UpdateProfile(userID uint, input entity.UpdateProfileInput) (entity.UserResponse, error)
+	UploadAvatar(userID uint, avatarPath string) (entity.UserResponse, error)
 	ChangePassword(userID uint, input entity.ChangePasswordInput) error
 	GetAllUsers() ([]entity.UserResponse, error)
 	ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error)
 	LogoutToken(token string) error
+	DeleteAccount(userID uint, token string) error
 }
 
 // userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository & RedisRepository.
@@ -195,7 +199,7 @@ func (u *userUsecase) GetProfile(userID uint) (entity.UserResponse, error) {
 	return entity.FormatUser(*user), nil
 }
 
-// UpdateProfile memperbarui Nama & Email pengguna.
+// UpdateProfile memperbarui profil pengguna (Nama, Email, HP, Gender, Tgl Lahir, Alamat, Bio).
 func (u *userUsecase) UpdateProfile(userID uint, input entity.UpdateProfileInput) (entity.UserResponse, error) {
 	user, err := u.userRepo.FindByID(userID)
 	if err != nil {
@@ -212,6 +216,19 @@ func (u *userUsecase) UpdateProfile(userID uint, input entity.UpdateProfileInput
 
 	user.Name = input.Name
 	user.Email = input.Email
+	user.Phone = input.Phone
+	user.Gender = input.Gender
+	user.Address = input.Address
+	user.Bio = input.Bio
+
+	if input.BirthDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", input.BirthDate)
+		if err == nil {
+			user.BirthDate = &parsedDate
+		}
+	} else {
+		user.BirthDate = nil
+	}
 
 	err = u.userRepo.Update(user)
 	if err != nil {
@@ -293,5 +310,107 @@ func (u *userUsecase) LogoutToken(token string) error {
 		// Simpan Access Token ke Redis Blacklist dengan TTL 24 jam
 		return u.redisRepo.BlacklistToken(token, 24*time.Hour)
 	}
+	return nil
+}
+
+// UploadAvatar meng-update path foto profil user di database.
+func (u *userUsecase) UploadAvatar(userID uint, avatarPath string) (entity.UserResponse, error) {
+	user, err := u.userRepo.FindByID(userID)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("user tidak ditemukan")
+	}
+
+	user.Avatar = avatarPath
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("gagal menyimpan avatar di database")
+	}
+
+	return entity.FormatUser(*user), nil
+}
+
+// DeleteAccount menghapus akun secara Soft Delete dan meng-invalidasi token di Redis.
+func (u *userUsecase) DeleteAccount(userID uint, token string) error {
+	user, err := u.userRepo.FindByID(userID)
+	if err != nil {
+		return errors.New("user tidak ditemukan")
+	}
+
+	err = u.userRepo.Delete(user.ID)
+	if err != nil {
+		return errors.New("gagal menghapus akun")
+	}
+
+	if u.redisRepo != nil {
+		_ = u.redisRepo.DeleteRefreshToken(userID)
+		if token != "" {
+			_ = u.redisRepo.BlacklistToken(token, 24*time.Hour)
+		}
+	}
+
+	return nil
+}
+
+// AdminUpdateUser memproses pembaruan data pengguna oleh Super Admin.
+func (u *userUsecase) AdminUpdateUser(input entity.AdminUpdateUserInput) (entity.UserResponse, error) {
+	user, err := u.userRepo.FindByID(input.UserID)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("pengguna target tidak ditemukan")
+	}
+
+	// Cek unik email jika email diubah
+	if input.Email != user.Email {
+		existingUser, _ := u.userRepo.FindByEmail(input.Email)
+		if existingUser != nil && existingUser.ID != input.UserID {
+			return entity.UserResponse{}, errors.New("email sudah digunakan oleh pengguna lain")
+		}
+	}
+
+	role := input.Role
+	if role != "superadmin" && role != "owner" && role != "admin" {
+		role = "admin"
+	}
+
+	user.Name = input.Name
+	user.Email = input.Email
+	user.Role = role
+	user.Phone = input.Phone
+	user.Gender = input.Gender
+	user.Address = input.Address
+	user.Bio = input.Bio
+
+	if input.BirthDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", input.BirthDate)
+		if err == nil {
+			user.BirthDate = &parsedDate
+		}
+	} else {
+		user.BirthDate = nil
+	}
+
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("gagal memperbarui data pengguna")
+	}
+
+	return entity.FormatUser(*user), nil
+}
+
+// AdminDeleteUser menghapus pengguna lain oleh Super Admin (Soft Delete).
+func (u *userUsecase) AdminDeleteUser(targetUserID uint) error {
+	user, err := u.userRepo.FindByID(targetUserID)
+	if err != nil {
+		return errors.New("pengguna target tidak ditemukan")
+	}
+
+	err = u.userRepo.Delete(user.ID)
+	if err != nil {
+		return errors.New("gagal menghapus pengguna")
+	}
+
+	if u.redisRepo != nil {
+		_ = u.redisRepo.DeleteRefreshToken(targetUserID)
+	}
+
 	return nil
 }

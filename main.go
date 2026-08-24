@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"projectgolangnyoba/config"
 	"projectgolangnyoba/handler"
@@ -15,6 +16,11 @@ import (
 
 func main() {
 	fmt.Println("=== Memulai Server REST API Golang (Clean Architecture) ===")
+
+	// 0. Pastikan folder penyimpan gambar 'images' telah dibuat
+	if err := os.MkdirAll("images", os.ModePerm); err != nil {
+		log.Fatalf("Gagal membuat direktori images: %v", err)
+	}
 
 	// 1. Inisialisasi Database PostgreSQL & Redis
 	db := config.InitDB()
@@ -31,6 +37,9 @@ func main() {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 	r.LoadHTMLGlob("views/*")
+
+	// Serve Static Files untuk Folder Gambar Avatar
+	r.Static("/images", "./images")
 
 	// Web Routes (API Status & Auto-Redirect ke Vue 3 Frontend)
 	r.GET("/", userHandler.ShowAPIStatus)
@@ -59,6 +68,8 @@ func main() {
 		protected.POST("/logout", userHandler.Logout)
 		protected.GET("/profile", userHandler.Profile)
 		protected.PUT("/profile", userHandler.UpdateProfile)
+		protected.POST("/profile/avatar", userHandler.UploadAvatar)
+		protected.DELETE("/profile", userHandler.DeleteAccount)
 		protected.PUT("/change-password", userHandler.ChangePassword)
 
 		// Rute Khusus Peran Superadmin & Owner
@@ -74,6 +85,8 @@ func main() {
 		{
 			superadminGroup.PUT("/change-role", userHandler.ChangeRole)
 			superadminGroup.POST("/users", userHandler.CreateUserByAdmin)
+			superadminGroup.PUT("/users", userHandler.AdminUpdateUser)
+			superadminGroup.DELETE("/users/:id", userHandler.AdminDeleteUser)
 		}
 	}
 

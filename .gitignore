@@ -44,3 +44,7 @@ desktop.ini
 *.log
 coverage.out
 profile.out
+
+# Uploaded images
+images/*
+!images/.gitkeep

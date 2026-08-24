@@ -1,7 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"projectgolangnyoba/entity"
 	"projectgolangnyoba/usecase"
@@ -309,6 +314,166 @@ func (h *UserHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Logout berhasil (Token di-blacklist di Redis)",
+	})
+}
+
+// UploadAvatar handler untuk POST /api/profile/avatar (Protected Endpoint, Upload File Multipart)
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+	userID := userIDVal.(uint)
+
+	// 1. Ambil file dari form multipart 'avatar'
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "File foto profil (avatar) wajib diunggah",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// 2. Validasi ekstensi file (.jpg, .jpeg, .png, .webp)
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Format file tidak didukung! Harap unggah file berformat .jpg, .jpeg, .png, atau .webp",
+		})
+		return
+	}
+
+	// 3. Validasi ukuran file (maksimal 2MB)
+	if file.Size > 2*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Ukuran file terlalu besar! Maksimal ukuran file adalah 2MB",
+		})
+		return
+	}
+
+	// 4. Buat nama file unik dan simpan ke folder images/
+	fileName := fmt.Sprintf("avatar-%d-%d%s", userID, time.Now().Unix(), ext)
+	dst := filepath.Join("images", fileName)
+
+	if err := c.SaveUploadedFile(file, dst); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Gagal menyimpan file avatar di server",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	// 5. Update avatar path di database via Usecase
+	avatarPath := "images/" + fileName
+	userResponse, err := h.userUsecase.UploadAvatar(userID, avatarPath)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Foto profil berhasil diperbarui",
+		"data":    userResponse,
+	})
+}
+
+// DeleteAccount handler untuk DELETE /api/profile (Protected Endpoint, Soft Delete)
+func (h *UserHandler) DeleteAccount(c *gin.Context) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+	userID := userIDVal.(uint)
+
+	tokenStr := ""
+	if tokenVal, exists := c.Get("currentToken"); exists {
+		tokenStr = tokenVal.(string)
+	}
+
+	err := h.userUsecase.DeleteAccount(userID, tokenStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Akun Anda berhasil dihapus (Soft Delete)",
+	})
+}
+
+// AdminUpdateUser handler untuk PUT /api/superadmin/users (Khusus Superadmin)
+func (h *UserHandler) AdminUpdateUser(c *gin.Context) {
+	var input entity.AdminUpdateUserInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Input tidak valid",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	userResponse, err := h.userUsecase.AdminUpdateUser(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Data pengguna berhasil diperbarui oleh Super Admin",
+		"data":    userResponse,
+	})
+}
+
+// AdminDeleteUser handler untuk DELETE /api/superadmin/users/:id (Khusus Superadmin)
+func (h *UserHandler) AdminDeleteUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ID pengguna tidak valid",
+		})
+		return
+	}
+
+	err = h.userUsecase.AdminDeleteUser(uint(id))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Pengguna berhasil dihapus oleh Super Admin (Soft Delete)",
 	})
 }
 
