@@ -15,6 +15,8 @@ type UserUsecase interface {
 	GetProfile(userID uint) (entity.UserResponse, error)
 	UpdateProfile(userID uint, input entity.UpdateProfileInput) (entity.UserResponse, error)
 	ChangePassword(userID uint, input entity.ChangePasswordInput) error
+	GetAllUsers() ([]entity.UserResponse, error)
+	ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error)
 }
 
 // userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository.
@@ -41,24 +43,31 @@ func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse,
 		return entity.UserResponse{}, errors.New("gagal mengamankan password")
 	}
 
-	// 3. Buat entity User baru
+	// 3. Tentukan role (superadmin, owner, admin; default: admin)
+	role := input.Role
+	if role != "superadmin" && role != "owner" && role != "admin" {
+		role = "admin"
+	}
+
+	// 4. Buat entity User baru
 	user := entity.User{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: hashedPassword,
+		Role:     role,
 	}
 
-	// 4. Simpan ke database melalui repository
+	// 5. Simpan ke database melalui repository
 	err = u.userRepo.Create(&user)
 	if err != nil {
 		return entity.UserResponse{}, err
 	}
 
-	// 5. Kembalikan data user dalam format UserResponse (tanpa password)
+	// 6. Kembalikan data user dalam format UserResponse (tanpa password)
 	return entity.FormatUser(user), nil
 }
 
-// Login memverifikasi kredensial email & password dan menghasilkan JWT Token.
+// Login memverifikasi kredensial email & password dan menghasilkan JWT Token dengan Role.
 func (u *userUsecase) Login(input entity.LoginInput) (string, error) {
 	// 1. Cari user berdasarkan email
 	user, err := u.userRepo.FindByEmail(input.Email)
@@ -71,8 +80,13 @@ func (u *userUsecase) Login(input entity.LoginInput) (string, error) {
 		return "", errors.New("email atau password salah")
 	}
 
-	// 3. Generate JWT Token
-	token, err := utils.GenerateToken(user.ID, user.Email)
+	role := user.Role
+	if role == "" {
+		role = "admin"
+	}
+
+	// 3. Generate JWT Token yang menyertakan Role
+	token, err := utils.GenerateToken(user.ID, user.Email, role)
 	if err != nil {
 		return "", errors.New("gagal membuat token autentikasi")
 	}
@@ -139,3 +153,39 @@ func (u *userUsecase) ChangePassword(userID uint, input entity.ChangePasswordInp
 	return u.userRepo.Update(user)
 }
 
+// GetAllUsers mengambil seluruh daftar pengguna (Khusus Superadmin & Owner).
+func (u *userUsecase) GetAllUsers() ([]entity.UserResponse, error) {
+	users, err := u.userRepo.FindAll()
+	if err != nil {
+		return nil, errors.New("gagal mengambil daftar pengguna")
+	}
+
+	var formattedUsers []entity.UserResponse
+	for _, user := range users {
+		formattedUsers = append(formattedUsers, entity.FormatUser(user))
+	}
+
+	return formattedUsers, nil
+}
+
+// ChangeUserRole mengubah peran (role) pengguna lain (Khusus Superadmin).
+func (u *userUsecase) ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error) {
+	// Validasi role target
+	if input.Role != "superadmin" && input.Role != "owner" && input.Role != "admin" {
+		return entity.UserResponse{}, errors.New("role tidak valid (pilih: superadmin, owner, atau admin)")
+	}
+
+	user, err := u.userRepo.FindByID(input.UserID)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("pengguna target tidak ditemukan")
+	}
+
+	user.Role = input.Role
+
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return entity.UserResponse{}, errors.New("gagal memperbarui peran pengguna")
+	}
+
+	return entity.FormatUser(*user), nil
+}

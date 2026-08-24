@@ -48,14 +48,19 @@ func getJWTSecret() []byte {
 type CustomClaims struct {
 	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-// GenerateToken membuat JWT token baru berdasarkan UserID & Email dengan durasi 24 jam.
-func GenerateToken(userID uint, email string) (string, error) {
+// GenerateToken membuat JWT token baru berdasarkan UserID, Email, & Role dengan durasi 24 jam.
+func GenerateToken(userID uint, email string, role string) (string, error) {
+	if role == "" {
+		role = "admin"
+	}
 	claims := CustomClaims{
 		UserID: userID,
 		Email:  email,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

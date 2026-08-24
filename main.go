@@ -55,6 +55,20 @@ func main() {
 		protected.GET("/profile", userHandler.Profile)
 		protected.PUT("/profile", userHandler.UpdateProfile)
 		protected.PUT("/change-password", userHandler.ChangePassword)
+
+		// Rute Khusus Peran Superadmin & Owner
+		adminGroup := protected.Group("/admin")
+		adminGroup.Use(middleware.RoleMiddleware("superadmin", "owner"))
+		{
+			adminGroup.GET("/users", userHandler.GetAllUsers)
+		}
+
+		// Rute Khusus Peran Superadmin Sahaja
+		superadminGroup := protected.Group("/superadmin")
+		superadminGroup.Use(middleware.RoleMiddleware("superadmin"))
+		{
+			superadminGroup.PUT("/change-role", userHandler.ChangeRole)
+		}
 	}
 
 	// 4. Jalankan Server HTTP pada port 8080

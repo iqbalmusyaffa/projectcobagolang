@@ -7,7 +7,7 @@
           TA
         </div>
         <h2 class="text-2xl font-bold text-slate-900">Buat Akun Baru</h2>
-        <p class="text-sm text-slate-500 mt-1">Daftar Vue 3 + TailAdmin Dashboard</p>
+        <p class="text-sm text-slate-500 mt-1">Daftar Vue 3 + TailAdmin RBAC Dashboard</p>
       </div>
 
       <!-- Alert -->
@@ -53,6 +53,18 @@
           />
         </div>
 
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Pilih Peran (Role)</label>
+          <select
+            v-model="role"
+            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm bg-white"
+          >
+            <option value="admin">Admin (Standar)</option>
+            <option value="owner">Owner (Pemilik Laporan)</option>
+            <option value="superadmin">Superadmin (Hak Akses Penuh)</option>
+          </select>
+        </div>
+
         <button
           type="submit"
           :disabled="isLoading"
@@ -79,6 +91,7 @@ const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const role = ref('admin')
 const isLoading = ref(false)
 
 const alert = reactive({
@@ -94,12 +107,13 @@ const handleRegister = async () => {
     const res = await api.post('/register', {
       name: name.value,
       email: email.value,
-      password: password.value
+      password: password.value,
+      role: role.value
     })
 
     if (res.status === 201 || res.data.status === 'success') {
       alert.isSuccess = true
-      alert.message = 'Registrasi berhasil! Mengalihkan ke halaman Login...'
+      alert.message = `Registrasi akun ${role.value.toUpperCase()} berhasil! Mengalihkan ke halaman Login...`
 
       setTimeout(() => {
         router.push('/login')

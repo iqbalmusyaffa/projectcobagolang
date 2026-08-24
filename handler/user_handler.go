@@ -192,7 +192,54 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	})
 }
 
+// GetAllUsers handler untuk GET /api/admin/users (Khusus Superadmin & Owner)
+func (h *UserHandler) GetAllUsers(c *gin.Context) {
+	users, err := h.userUsecase.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Berhasil mengambil daftar pengguna",
+		"data":    users,
+	})
+}
+
+// ChangeRole handler untuk PUT /api/superadmin/change-role (Khusus Superadmin)
+func (h *UserHandler) ChangeRole(c *gin.Context) {
+	var input entity.ChangeRoleInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Input tidak valid",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	userResponse, err := h.userUsecase.ChangeUserRole(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Peran pengguna berhasil diperbarui",
+		"data":    userResponse,
+	})
+}
+
 // ShowAPIStatus merender halaman status REST API Golang
+
 func (h *UserHandler) ShowAPIStatus(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", nil)
 }
