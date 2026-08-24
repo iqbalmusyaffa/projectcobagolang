@@ -84,8 +84,16 @@ const handleLogin = async () => {
       password: password.value
     })
 
-    if (res.data && res.data.data && res.data.data.token) {
-      localStorage.setItem('token', res.data.data.token)
+    if (res.data && res.data.data) {
+      const accessToken = res.data.data.access_token || res.data.data.token
+      const refreshToken = res.data.data.refresh_token
+
+      localStorage.setItem('token', accessToken)
+      localStorage.setItem('access_token', accessToken)
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken)
+      }
+
       alert.isSuccess = true
       alert.message = 'Login berhasil! Mengalihkan ke Dashboard...'
 
