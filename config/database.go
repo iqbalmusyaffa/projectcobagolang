@@ -47,6 +47,9 @@ func InitDB() *gorm.DB {
 
 	fmt.Println("Migrasi tabel database berhasil!")
 
+	// Menjalankan Seeder untuk memastikan akun Super Admin 'faridwimansyah8@gmail.com' selalu ada
+	SeedSuperAdmin(db)
+
 	return db
 }
 
