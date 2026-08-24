@@ -100,19 +100,31 @@ projectgolangnyoba/
 
 ## 🛠️ Cara Menjalankan Aplikasi
 
-### 1. Jalankan Backend (Golang REST API)
+### 📥 1. Clone & Setup Repository
+```bash
+# 1. Clone repository dari GitHub
+git clone https://github.com/iqbalmusyaffa/projectcobagolang.git
+
+# 2. Masuk ke direktori proyek
+cd projectcobagolang
+
+# 3. Pindah ke branch fitur terbaru
+git checkout feature/dashboard-analytics-charts
+```
+
+### ⚡ 2. Jalankan Backend (Golang REST API)
 ```bash
 # 1. Download dependency Go
 go mod tidy
 
 # 2. Pastikan PostgreSQL & Redis aktif di komputer Anda
 
-# 3. Jalankan server Golang (Server otomatis melakukan GORM AutoMigrate & Seeding Super Admin)
+# 3. Jalankan server Golang (Server otomatis melakukan GORM AutoMigrate & Seeding)
 go run main.go
 ```
 *Backend berjalan di: `http://localhost:8080`*
 
-### 2. Jalankan Frontend (Vue 3 TailAdmin)
+### 💻 3. Jalankan Frontend (Vue 3 TailAdmin)
 ```bash
 # 1. Masuk ke folder frontend
 cd frontend
