@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"strings"
 
+	"projectgolangnyoba/repository"
 	"projectgolangnyoba/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware memproteksi endpoint API agar hanya dapat diakses dengan JWT Token yang valid.
-func AuthMiddleware() gin.HandlerFunc {
+// AuthMiddleware memproteksi endpoint API agar hanya dapat diakses dengan JWT Token yang valid dan tidak ter-blacklist.
+func AuthMiddleware(redisRepo repository.RedisRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Ambil header Authorization (format: "Bearer <token>")
 		authHeader := c.GetHeader("Authorization")
@@ -36,7 +37,17 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// 3. Validasi token menggunakan helper JWT
+		// 3. Cek apakah Token terdaftar di Redis Blacklist (Instant Logout Check)
+		if redisRepo != nil && redisRepo.IsTokenBlacklisted(tokenString) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": "Token telah di-logout (Blacklisted). Silakan login kembali.",
+			})
+			c.Abort()
+			return
+		}
+
+		// 4. Validasi token menggunakan helper JWT
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -47,8 +58,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 4. Simpan userID dan userRole ke context agar bisa dibaca oleh Handler & RoleMiddleware
+		// 5. Simpan userID, userRole, dan tokenString ke context
 		c.Set("userID", claims.UserID)
+		c.Set("currentToken", tokenString)
 
 		role := claims.Role
 		if role == "" {

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"time"
 
 	"projectgolangnyoba/entity"
 	"projectgolangnyoba/repository"
@@ -17,16 +18,21 @@ type UserUsecase interface {
 	ChangePassword(userID uint, input entity.ChangePasswordInput) error
 	GetAllUsers() ([]entity.UserResponse, error)
 	ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error)
+	LogoutToken(token string) error
 }
 
-// userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository.
+// userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository & RedisRepository.
 type userUsecase struct {
-	userRepo repository.UserRepository
+	userRepo  repository.UserRepository
+	redisRepo repository.RedisRepository
 }
 
 // NewUserUsecase adalah konstruktor untuk membuat instance UserUsecase.
-func NewUserUsecase(userRepo repository.UserRepository) UserUsecase {
-	return &userUsecase{userRepo: userRepo}
+func NewUserUsecase(userRepo repository.UserRepository, redisRepo repository.RedisRepository) UserUsecase {
+	return &userUsecase{
+		userRepo:  userRepo,
+		redisRepo: redisRepo,
+	}
 }
 
 // Register memproses pendaftaran akun pengguna baru.
@@ -188,4 +194,13 @@ func (u *userUsecase) ChangeUserRole(input entity.ChangeRoleInput) (entity.UserR
 	}
 
 	return entity.FormatUser(*user), nil
+}
+
+// LogoutToken memasukkan token JWT ke Redis Blacklist (Instant Logout).
+func (u *userUsecase) LogoutToken(token string) error {
+	if u.redisRepo != nil && token != "" {
+		// Simpan token ke Redis Blacklist dengan TTL 24 jam
+		return u.redisRepo.BlacklistToken(token, 24*time.Hour)
+	}
+	return nil
 }

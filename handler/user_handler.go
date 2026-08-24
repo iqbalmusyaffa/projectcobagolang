@@ -238,7 +238,22 @@ func (h *UserHandler) ChangeRole(c *gin.Context) {
 	})
 }
 
+// Logout handler untuk POST /api/logout (Protected Endpoint, Memasukkan Token ke Redis Blacklist)
+func (h *UserHandler) Logout(c *gin.Context) {
+	tokenVal, exists := c.Get("currentToken")
+	if exists {
+		tokenStr := tokenVal.(string)
+		_ = h.userUsecase.LogoutToken(tokenStr)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Logout berhasil (Token di-blacklist di Redis)",
+	})
+}
+
 // ShowAPIStatus merender halaman status REST API Golang
+
 
 func (h *UserHandler) ShowAPIStatus(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", nil)

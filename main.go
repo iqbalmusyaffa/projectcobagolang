@@ -16,12 +16,15 @@ import (
 func main() {
 	fmt.Println("=== Memulai Server REST API Golang (Clean Architecture) ===")
 
-	// 1. Inisialisasi Database PostgreSQL
+	// 1. Inisialisasi Database PostgreSQL & Redis
 	db := config.InitDB()
+	rdb := config.InitRedis()
 
-	// 2. Dependency Injection Wiring (Database -> Repository -> Usecase -> Handler)
+	// 2. Dependency Injection Wiring (Database/Redis -> Repository -> Usecase -> Handler)
 	userRepo := repository.NewUserRepository(db)
-	userUsecase := usecase.NewUserUsecase(userRepo)
+	redisRepo := repository.NewRedisRepository(rdb)
+
+	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
 
 	// 3. Inisialisasi Router Gin & Global Middleware
@@ -50,8 +53,9 @@ func main() {
 
 	// API Routes Privat (Wajib Menggunakan Header 'Authorization: Bearer <token>')
 	protected := r.Group("/api")
-	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware.AuthMiddleware(redisRepo))
 	{
+		protected.POST("/logout", userHandler.Logout)
 		protected.GET("/profile", userHandler.Profile)
 		protected.PUT("/profile", userHandler.UpdateProfile)
 		protected.PUT("/change-password", userHandler.ChangePassword)

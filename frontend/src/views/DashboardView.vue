@@ -502,9 +502,15 @@ const handleChangeRole = async (targetUserID, newRole) => {
   }
 }
 
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    await api.post('/logout')
+  } catch (err) {
+    // Ignore error if server unreachable
+  } finally {
+    localStorage.removeItem('token')
+    router.push('/login')
+  }
 }
 
 const closeDropdownOnOutsideClick = () => {
