@@ -47,8 +47,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 4. Simpan userID ke context agar bisa dibaca oleh Handler berikutnya
+		// 4. Simpan userID dan userRole ke context agar bisa dibaca oleh Handler & RoleMiddleware
 		c.Set("userID", claims.UserID)
+
+		role := claims.Role
+		if role == "" {
+			role = "admin"
+		}
+		c.Set("userRole", role)
+
 		c.Next()
 	}
 }
