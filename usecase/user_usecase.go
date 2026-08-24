@@ -88,10 +88,10 @@ func (u *userUsecase) AdminCreateUser(input entity.AdminCreateUserInput) (entity
 		return entity.UserResponse{}, errors.New("gagal mengamankan password")
 	}
 
-	// 3. Validasi role (superadmin, owner, admin; default: admin)
+	// 3. Validasi role (superadmin, owner, admin, user; default: user)
 	role := input.Role
-	if role != "superadmin" && role != "owner" && role != "admin" {
-		role = "admin"
+	if role != "superadmin" && role != "owner" && role != "admin" && role != "user" {
+		role = "user"
 	}
 
 	// 4. Buat entity User baru
@@ -368,8 +368,8 @@ func (u *userUsecase) AdminUpdateUser(input entity.AdminUpdateUserInput) (entity
 	}
 
 	role := input.Role
-	if role != "superadmin" && role != "owner" && role != "admin" {
-		role = "admin"
+	if role != "superadmin" && role != "owner" && role != "admin" && role != "user" {
+		role = "user"
 	}
 
 	user.Name = input.Name

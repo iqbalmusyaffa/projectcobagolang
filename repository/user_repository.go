@@ -76,5 +76,6 @@ func (r *userRepository) GetDashboardStats() (entity.DashboardStats, error) {
 	r.db.Model(&entity.User{}).Where("role = ?", "superadmin").Count(&stats.TotalSuperadmin)
 	r.db.Model(&entity.User{}).Where("role = ?", "owner").Count(&stats.TotalOwner)
 	r.db.Model(&entity.User{}).Where("role = ?", "admin").Count(&stats.TotalAdmin)
+	r.db.Model(&entity.User{}).Where("role = ?", "user").Count(&stats.TotalUserRole)
 	return stats, nil
 }
