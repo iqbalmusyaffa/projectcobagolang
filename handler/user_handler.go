@@ -477,6 +477,24 @@ func (h *UserHandler) AdminDeleteUser(c *gin.Context) {
 	})
 }
 
+// GetDashboardStats handler untuk GET /api/dashboard/stats (Protected Endpoint)
+func (h *UserHandler) GetDashboardStats(c *gin.Context) {
+	stats, err := h.userUsecase.GetDashboardStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Gagal mengambil statistik dashboard",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Statistik dashboard berhasil diambil",
+		"data":    stats,
+	})
+}
+
 // ShowAPIStatus merender halaman status REST API Golang
 
 

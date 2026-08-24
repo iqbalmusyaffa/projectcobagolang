@@ -109,6 +109,14 @@ type TokenPairResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// DashboardStats melambangkan statistik ringkasan data pengguna di database.
+type DashboardStats struct {
+	TotalUsers      int64 `json:"total_users"`
+	TotalSuperadmin int64 `json:"total_superadmin"`
+	TotalOwner      int64 `json:"total_owner"`
+	TotalAdmin      int64 `json:"total_admin"`
+}
+
 
 // FormatUser mengubah struct User menjadi UserResponse (menghilangkan password)
 func FormatUser(user User) UserResponse {

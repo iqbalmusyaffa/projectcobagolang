@@ -25,6 +25,7 @@ type UserUsecase interface {
 	ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error)
 	LogoutToken(token string) error
 	DeleteAccount(userID uint, token string) error
+	GetDashboardStats() (entity.DashboardStats, error)
 }
 
 // userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository & RedisRepository.
@@ -413,4 +414,9 @@ func (u *userUsecase) AdminDeleteUser(targetUserID uint) error {
 	}
 
 	return nil
+}
+
+// GetDashboardStats mengambil data statistik ringkasan total pengguna & role.
+func (u *userUsecase) GetDashboardStats() (entity.DashboardStats, error) {
+	return u.userRepo.GetDashboardStats()
 }

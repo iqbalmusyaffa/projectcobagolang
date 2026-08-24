@@ -14,6 +14,7 @@ type UserRepository interface {
 	FindAll() ([]entity.User, error)
 	Update(user *entity.User) error
 	Delete(id uint) error
+	GetDashboardStats() (entity.DashboardStats, error)
 }
 
 // userRepository implementasi konkret dari UserRepository yang menggunakan GORM.
@@ -66,4 +67,14 @@ func (r *userRepository) Update(user *entity.User) error {
 // Delete melakukan Soft Delete data User berdasarkan Primary Key (ID).
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&entity.User{}, id).Error
+}
+
+// GetDashboardStats menghitung statistik ringkasan total user & distribusi role dari PostgreSQL.
+func (r *userRepository) GetDashboardStats() (entity.DashboardStats, error) {
+	var stats entity.DashboardStats
+	r.db.Model(&entity.User{}).Count(&stats.TotalUsers)
+	r.db.Model(&entity.User{}).Where("role = ?", "superadmin").Count(&stats.TotalSuperadmin)
+	r.db.Model(&entity.User{}).Where("role = ?", "owner").Count(&stats.TotalOwner)
+	r.db.Model(&entity.User{}).Where("role = ?", "admin").Count(&stats.TotalAdmin)
+	return stats, nil
 }
