@@ -62,12 +62,17 @@ projectgolangnyoba/
 - **Upload Foto Profil (Avatar):** Mendukung pengunggahan foto avatar (`JPG`, `PNG`, `WEBP` maks 2MB) disajikan via static file `/images`.
 - **Hapus Akun Mandiri (Soft Delete):** Fitur *Danger Zone* untuk menonaktifkan akun sendiri.
 
-### 3. Fitur Khusus Super Admin (User Management)
-- **Lihat Semua Pengguna:** Menampilkan tabel seluruh pengguna terdaftar.
-- **Tambah User Baru:** Membuat akun pengguna langsung oleh Super Admin.
-- **Edit Data Pengguna Lain:** Super Admin dapat mengedit Nama, Email, Peran, No HP, Gender, Tgl Lahir, Alamat, dan Bio pengguna lain.
-- **Hapus Pengguna Lain (Soft Delete):** Menghapus pengguna lain dari sistem serta mencabut token refresh di Redis.
-- **Instant Role Switcher:** Mengubah hak akses pengguna secara cepat (`admin`, `owner`, `superadmin`).
+### 4. Dashboard Analytics & Visualisasi Grafik (Chart.js)
+- **Realtime Stats Cards:** Menampilkan Total Pengguna, Jumlah Super Admin, Owner, dan Admin Standar.
+- **Grafik Interaktif Chart.js:**
+  - **Doughnut Chart:** Visualisasi persentase distribusi peran pengguna (RBAC).
+  - **Bar Chart:** Komparasi jumlah akun aktif berdasarkan kategori peran.
+- **API Endpoint:** `GET /api/dashboard/stats` menyajikan statistik agregasi SQL PostgreSQL.
+
+### 5. Interaktivitas UI & Notifikasi Real-Time
+- **Sistem Notifikasi Lonceng Header:** Popover notifikasi modern dengan badge unread counter, penanda kategori (Security, Profile, System), serta fitur *Tandai Dibaca* & *Hapus Notifikasi*.
+- **Tombol Sinkron Data (Data Sync):** Fitur sinkronisasi instan dari database PostgreSQL dari Topbar Header tanpa merefresh browser.
+- **Pratinjau Foto Profil & Download Avatar:** Modal lightbox foto profil resolusi tinggi yang dilengkapi tombol **Unduh Foto Profil**.
 
 ---
 
@@ -84,6 +89,7 @@ projectgolangnyoba/
 | `DELETE` | `/api/profile` | Protected | Menghapus akun sendiri (Soft Delete) |
 | `PUT` | `/api/change-password` | Protected | Mengubah kata sandi akun |
 | `POST` | `/api/logout` | Protected | Logout & blacklist token ke Redis |
+| `GET` | `/api/dashboard/stats` | Protected | Mengambil data statistik agregasi dashboard & grafik |
 | `GET` | `/api/admin/users` | Admin & Superadmin | Mengambil daftar seluruh pengguna |
 | `POST` | `/api/superadmin/users` | Khusus Superadmin | Membuat pengguna baru |
 | `PUT` | `/api/superadmin/users` | Khusus Superadmin | Memperbarui data pengguna lain |
