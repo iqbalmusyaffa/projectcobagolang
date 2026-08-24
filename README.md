@@ -1,77 +1,127 @@
-# Golang Login & Register REST API + TailAdmin Frontend (Clean Architecture)
+# Golang REST API & Vue 3 TailAdmin Dashboard (Clean Architecture)
 
-Project REST API menggunakan **Golang** & **PostgreSQL** dengan **Clean Architecture (Layered Architecture)** dan dilengkapi **Frontend TailAdmin (Tailwind CSS)**.
+Proyek fullstack modern berbasis **Golang REST API** (Gin Framework, GORM PostgreSQL, Redis) menggunakan **Clean Architecture** dan **Vue 3 Frontend (Tailwind CSS / TailAdmin)**.
+
+---
+
+## 🚀 Teknologi Utama (Tech Stack)
+
+- **Backend:** Golang (Gin Gonic Framework)
+- **Database:** PostgreSQL (GORM ORM dengan Auto-Migration)
+- **Caching & Keamanan:** Redis (JWT Token Blacklisting & Refresh Tokens)
+- **Frontend:** Vue 3 (Vite, Vue Router, Axios, Tailwind CSS / TailAdmin)
+- **Arsitektur:** Clean Architecture (Entity, Repository, Usecase, Handler/Controller, Middleware)
+
+---
 
 ## 📁 Struktur Project
 
 ```text
 projectgolangnyoba/
-├── config/
-│   └── database.go        # Koneksi & Migrasi PostgreSQL via GORM
-├── entity/
-│   └── user.go            # Model database & Struct DTO (Request/Response)
-├── repository/
-│   └── user_repository.go # Interface & Query Database PostgreSQL
-├── usecase/
-│   └── user_usecase.go    # Logika Bisnis (Register, Hash Bcrypt, Login, JWT)
-├── handler/
-│   └── user_handler.go    # HTTP Controller & HTML Template Renderer
-├── middleware/
-│   └── auth_middleware.go # Validasi Token JWT untuk Endpoint Terproteksi
-├── utils/
-│   ├── password.go       # Helper Hash & Compare Password (bcrypt)
-│   └── jwt.go            # Helper Generate & Validate JWT Token
-├── views/                 # Template Frontend Tailwind CSS / TailAdmin
-│   ├── login.html        # Form Login TailAdmin
-│   ├── register.html     # Form Register TailAdmin
-│   └── dashboard.html    # Dashboard TailAdmin Free Template UI
-├── .env.example           # Contoh variabel lingkungan
+├── config/                # Koneksi Database PostgreSQL & Redis Client
+│   ├── database.go        # GORM Init & AutoMigrate
+│   └── redis.go           # Redis Client & Blacklist Token Store
+├── entity/                # Struct Model GORM & DTO (Request/Response)
+│   └── user.go            # User entity, DTOs (Profile, Admin, Role, Auth)
+├── repository/            # Data Access Layer / Database Queries
+│   ├── user_repository.go # Repository Interface & Implementasi PostgreSQL
+│   └── redis_repository.go# Repository Blacklist Token Redis
+├── usecase/               # Business Logic Layer
+│   └── user_usecase.go    # Logika Bisnis (Register, Login, Avatar, Admin CRUD)
+├── handler/               # Presentation Layer / HTTP Handlers
+│   └── user_handler.go    # Gin HTTP Controllers (Auth, Profile, Admin)
+├── middleware/            # Auth & RBAC Middleware
+│   └── auth_middleware.go # Validasi Token JWT & Role-Based Access Control
+├── utils/                 # Helper Functions
+│   ├── password.go        # Hash & Compare Bcrypt
+│   └── jwt.go             # Generate & Verify Access/Refresh JWT
+├── images/                # Penyimpanan lokal foto profil (Avatar)
+├── frontend/              # Single Page Application Vue 3 + Vite
+│   ├── src/
+│   │   ├── views/
+│   │   │   ├── LoginView.vue
+│   │   │   ├── RegisterView.vue
+│   │   │   └── DashboardView.vue # Dashboard Utama & Halaman Profil Dedicated
+│   │   └── services/
+│   │       └── api.js      # Axios Client dengan Authorization Header Interceptor
 ├── go.mod                 # Dependency Go
-└── main.go                # Entry point aplikasi, Web Routes, & REST API
+└── main.go                # Entry Point & Route Engine
 ```
 
 ---
 
-## 🛠️ Prasyarat (Prerequisites)
+## 🌟 Fitur Unggulan
 
-1. **Golang** (v1.20+) terinstal di komputer Anda.
-2. **PostgreSQL** sudah berjalan di komputer lokal (port `5432`).
-3. Buat database baru di PostgreSQL bernama `golang_db`:
-   ```sql
-   CREATE DATABASE golang_db;
-   ```
+### 1. Autentikasi & Keamanan Tingkat Lanjut
+- **JWT Access Token & Refresh Token:** Autentikasi terpisah dengan token refresh.
+- **Redis Token Blacklisting:** Token otomatis dimasukkan ke dalam daftar hitam Redis saat pengguna melakukan Logout atau Soft Delete Akun.
+- **RBAC (Role-Based Access Control):** Peran hirarki (`superadmin`, `owner`, `admin`).
 
----
+### 2. Manajemen Profil Pengguna (User Profile)
+- **Biodata Lengkap:** Menyimpan Nama, Email, Nomor Telepon/HP (`phone`), Jenis Kelamin (`gender`), Tanggal Lahir (`birth_date`), Alamat Lengkap (`address`), Bio (`bio`), serta Timestamp `created_at` & `updated_at`.
+- **Upload Foto Profil (Avatar):** Mendukung pengunggahan foto avatar (`JPG`, `PNG`, `WEBP` maks 2MB) disajikan via static file `/images`.
+- **Hapus Akun Mandiri (Soft Delete):** Fitur *Danger Zone* untuk menonaktifkan akun sendiri.
 
-## 🚀 Cara Menjalankan Aplikasi
-
-1. **Download Dependency:**
-   ```bash
-   go mod tidy
-   ```
-
-2. **Jalankan Aplikasi:**
-   ```bash
-   go run main.go
-   ```
-
-3. **Buka di Browser:**
-   - **Login Page:** `http://localhost:8080/login`
-   - **Register Page:** `http://localhost:8080/register`
-   - **Dashboard Page:** `http://localhost:8080/dashboard`
+### 3. Fitur Khusus Super Admin (User Management)
+- **Lihat Semua Pengguna:** Menampilkan tabel seluruh pengguna terdaftar.
+- **Tambah User Baru:** Membuat akun pengguna langsung oleh Super Admin.
+- **Edit Data Pengguna Lain:** Super Admin dapat mengedit Nama, Email, Peran, No HP, Gender, Tgl Lahir, Alamat, dan Bio pengguna lain.
+- **Hapus Pengguna Lain (Soft Delete):** Menghapus pengguna lain dari sistem serta mencabut token refresh di Redis.
+- **Instant Role Switcher:** Mengubah hak akses pengguna secara cepat (`admin`, `owner`, `superadmin`).
 
 ---
 
-## 📌 Fitur & Alur Autentikasi Frontend
+## 🔗 Dokumentasi REST API
 
-1. **Registrasi Akun:**
-   Buka `http://localhost:8080/register`, isi Nama, Email, dan Password. Form akan mengirim `POST /api/register` lalu meredirect ke halaman Login.
+| Method | Endpoint | Akses | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/register` | Publik | Registrasi akun baru |
+| `POST` | `/api/login` | Publik | Login & mendapatkan JWT Access/Refresh Token |
+| `POST` | `/api/refresh` | Publik | Memperbarui Access Token dengan Refresh Token |
+| `GET` | `/api/profile` | Protected | Mengambil data profil login saat ini |
+| `PUT` | `/api/profile` | Protected | Memperbarui biodata profil saat ini |
+| `POST` | `/api/profile/avatar` | Protected | Mengunggah foto profil avatar baru |
+| `DELETE` | `/api/profile` | Protected | Menghapus akun sendiri (Soft Delete) |
+| `PUT` | `/api/change-password` | Protected | Mengubah kata sandi akun |
+| `POST` | `/api/logout` | Protected | Logout & blacklist token ke Redis |
+| `GET` | `/api/admin/users` | Admin & Superadmin | Mengambil daftar seluruh pengguna |
+| `POST` | `/api/superadmin/users` | Khusus Superadmin | Membuat pengguna baru |
+| `PUT` | `/api/superadmin/users` | Khusus Superadmin | Memperbarui data pengguna lain |
+| `DELETE` | `/api/superadmin/users/:id` | Khusus Superadmin | Menghapus pengguna lain (Soft Delete) |
+| `PUT` | `/api/superadmin/change-role` | Khusus Superadmin | Mengubah Peran (Role) pengguna |
 
-2. **Login Akun:**
-   Buka `http://localhost:8080/login`, isi Email dan Password. Form akan mengirim `POST /api/login`, menerima Token JWT, menyimpannya di `localStorage`, dan meredirect ke Dashboard.
+---
 
-3. **Dashboard TailAdmin:**
-   Buka `http://localhost:8080/dashboard`. Javascript akan mengambil token dari `localStorage` dan memanggil `GET /api/profile` secara otomatis untuk merender Nama & Email Pengguna secara dinamis.
+## 🛠️ Cara Menjalankan Aplikasi
 
-4. **Logout:**
-   Klik tombol **Keluar (Logout)** di Sidebar / Header. Token JWT akan dihapus dari `localStorage` dan halaman dikembalikan ke Login.
+### 1. Jalankan Backend (Golang REST API)
+```bash
+# 1. Download dependency Go
+go mod tidy
+
+# 2. Pastikan PostgreSQL & Redis aktif di komputer Anda
+
+# 3. Jalankan server Golang (Server otomatis melakukan GORM AutoMigrate & Seeding Super Admin)
+go run main.go
+```
+*Backend berjalan di: `http://localhost:8080`*
+
+### 2. Jalankan Frontend (Vue 3 TailAdmin)
+```bash
+# 1. Masuk ke folder frontend
+cd frontend
+
+# 2. Install dependency Node.js
+npm install
+
+# 3. Menjalankan server lokal Vite
+npm run dev
+```
+*Frontend berjalan di: `http://localhost:5173`*
+
+---
+
+## 👤 Akun Super Admin Default (Seeder)
+- **Email:** `faridwimansyah8@gmail.com`
+- **Password:** `password123`
+- **Role:** `superadmin`
