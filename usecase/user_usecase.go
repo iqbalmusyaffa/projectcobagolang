@@ -50,18 +50,12 @@ func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse,
 		return entity.UserResponse{}, errors.New("gagal mengamankan password")
 	}
 
-	// 3. Tentukan role (superadmin, owner, admin; default: admin)
-	role := input.Role
-	if role != "superadmin" && role != "owner" && role != "admin" {
-		role = "admin"
-	}
-
-	// 4. Buat entity User baru
+	// 3. Registrasi publik SELALU dipaksa menjadi role 'admin' demi keamanan
 	user := entity.User{
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: hashedPassword,
-		Role:     role,
+		Role:     "admin",
 	}
 
 	// 5. Simpan ke database melalui repository
