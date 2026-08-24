@@ -12,7 +12,8 @@ import (
 // UserUsecase mendefinisikan kontrak logika bisnis terkait User.
 type UserUsecase interface {
 	Register(input entity.RegisterInput) (entity.UserResponse, error)
-	Login(input entity.LoginInput) (string, error)
+	Login(input entity.LoginInput) (entity.TokenPairResponse, error)
+	RefreshToken(refreshTokenStr string) (string, error)
 	GetProfile(userID uint) (entity.UserResponse, error)
 	UpdateProfile(userID uint, input entity.UpdateProfileInput) (entity.UserResponse, error)
 	ChangePassword(userID uint, input entity.ChangePasswordInput) error
@@ -73,17 +74,17 @@ func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse,
 	return entity.FormatUser(user), nil
 }
 
-// Login memverifikasi kredensial email & password dan menghasilkan JWT Token dengan Role.
-func (u *userUsecase) Login(input entity.LoginInput) (string, error) {
+// Login memverifikasi kredensial email & password dan menghasilkan Access Token (15m) & Refresh Token (7 Hari).
+func (u *userUsecase) Login(input entity.LoginInput) (entity.TokenPairResponse, error) {
 	// 1. Cari user berdasarkan email
 	user, err := u.userRepo.FindByEmail(input.Email)
 	if err != nil {
-		return "", errors.New("email atau password salah")
+		return entity.TokenPairResponse{}, errors.New("email atau password salah")
 	}
 
 	// 2. Verifikasi kesesuaian password
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
-		return "", errors.New("email atau password salah")
+		return entity.TokenPairResponse{}, errors.New("email atau password salah")
 	}
 
 	role := user.Role
@@ -91,13 +92,66 @@ func (u *userUsecase) Login(input entity.LoginInput) (string, error) {
 		role = "admin"
 	}
 
-	// 3. Generate JWT Token yang menyertakan Role
-	token, err := utils.GenerateToken(user.ID, user.Email, role)
+	// 3. Generate Access Token (15 Menit) & Refresh Token (7 Hari)
+	accessToken, err := utils.GenerateAccessToken(user.ID, user.Email, role)
 	if err != nil {
-		return "", errors.New("gagal membuat token autentikasi")
+		return entity.TokenPairResponse{}, errors.New("gagal membuat access token")
 	}
 
-	return token, nil
+	refreshToken, err := utils.GenerateRefreshToken(user.ID, user.Email)
+	if err != nil {
+		return entity.TokenPairResponse{}, errors.New("gagal membuat refresh token")
+	}
+
+	// 4. Simpan Refresh Token ke Redis dengan TTL 7 Hari (168 Jam)
+	if u.redisRepo != nil {
+		_ = u.redisRepo.StoreRefreshToken(user.ID, refreshToken, 7*24*time.Hour)
+	}
+
+	return entity.TokenPairResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+// RefreshToken memvalidasi Refresh Token dan mengembalikan Access Token 15 menit baru.
+func (u *userUsecase) RefreshToken(refreshTokenStr string) (string, error) {
+	// 1. Validasi signature & struktur Refresh Token
+	claims, err := utils.ValidateToken(refreshTokenStr)
+	if err != nil {
+		return "", errors.New("refresh token tidak valid atau sudah kadaluwarsa")
+	}
+
+	if claims.TokenType != "refresh" {
+		return "", errors.New("token bukan berjenis refresh token")
+	}
+
+	// 2. Cek apakah Refresh Token masih terdaftar dan cocok di Redis
+	if u.redisRepo != nil {
+		storedToken, err := u.redisRepo.GetRefreshToken(claims.UserID)
+		if err != nil || storedToken != refreshTokenStr {
+			return "", errors.New("refresh token telah dicabut atau di-logout")
+		}
+	}
+
+	// 3. Ambil data user dari database untuk mendapatkan Role terbaru
+	user, err := u.userRepo.FindByID(claims.UserID)
+	if err != nil {
+		return "", errors.New("pengguna tidak ditemukan")
+	}
+
+	role := user.Role
+	if role == "" {
+		role = "admin"
+	}
+
+	// 4. Terbitkan Access Token 15 Menit yang baru
+	newAccessToken, err := utils.GenerateAccessToken(user.ID, user.Email, role)
+	if err != nil {
+		return "", errors.New("gagal membuat access token baru")
+	}
+
+	return newAccessToken, nil
 }
 
 // GetProfile mengambil profil pengguna berdasarkan ID dari JWT Token.
@@ -196,10 +250,15 @@ func (u *userUsecase) ChangeUserRole(input entity.ChangeRoleInput) (entity.UserR
 	return entity.FormatUser(*user), nil
 }
 
-// LogoutToken memasukkan token JWT ke Redis Blacklist (Instant Logout).
+// LogoutToken memasukkan token JWT ke Redis Blacklist & menghapus Refresh Token (Instant Logout).
 func (u *userUsecase) LogoutToken(token string) error {
 	if u.redisRepo != nil && token != "" {
-		// Simpan token ke Redis Blacklist dengan TTL 24 jam
+		claims, err := utils.ValidateToken(token)
+		if err == nil && claims.UserID != 0 {
+			// Hapus Refresh Token dari Redis
+			_ = u.redisRepo.DeleteRefreshToken(claims.UserID)
+		}
+		// Simpan Access Token ke Redis Blacklist dengan TTL 24 jam
 		return u.redisRepo.BlacklistToken(token, 24*time.Hour)
 	}
 	return nil

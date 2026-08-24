@@ -8,10 +8,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisRepository mendefinisikan interface operasi Caching & Token Blacklisting di Redis.
+// RedisRepository mendefinisikan interface operasi Caching, Token Blacklisting, & Refresh Token di Redis.
 type RedisRepository interface {
 	BlacklistToken(token string, expiration time.Duration) error
 	IsTokenBlacklisted(token string) bool
+	StoreRefreshToken(userID uint, refreshToken string, expiration time.Duration) error
+	GetRefreshToken(userID uint) (string, error)
+	DeleteRefreshToken(userID uint) error
 	SetCache(key string, value string, expiration time.Duration) error
 	GetCache(key string) (string, error)
 	DeleteCache(key string) error
@@ -49,7 +52,34 @@ func (r *redisRepository) IsTokenBlacklisted(token string) bool {
 	return err == nil && val == "logout"
 }
 
-// SetCache menyimpan nilai string ke Redis Cache dengan durasi tertentu.
+// StoreRefreshToken menyimpan Refresh Token di Redis dengan key refresh_token:<userID>.
+func (r *redisRepository) StoreRefreshToken(userID uint, refreshToken string, expiration time.Duration) error {
+	if r.rdb == nil {
+		return nil
+	}
+	key := fmt.Sprintf("refresh_token:%d", userID)
+	return r.rdb.Set(r.ctx, key, refreshToken, expiration).Err()
+}
+
+// GetRefreshToken mengambil Refresh Token dari Redis berdasarkan userID.
+func (r *redisRepository) GetRefreshToken(userID uint) (string, error) {
+	if r.rdb == nil {
+		return "", fmt.Errorf("redis tidak aktif")
+	}
+	key := fmt.Sprintf("refresh_token:%d", userID)
+	return r.rdb.Get(r.ctx, key).Result()
+}
+
+// DeleteRefreshToken menghapus Refresh Token dari Redis berdasarkan userID.
+func (r *redisRepository) DeleteRefreshToken(userID uint) error {
+	if r.rdb == nil {
+		return nil
+	}
+	key := fmt.Sprintf("refresh_token:%d", userID)
+	return r.rdb.Del(r.ctx, key).Err()
+}
+
+// SetCache menyimpan nilai string ke Redis Cache berdasarkan Key.
 func (r *redisRepository) SetCache(key string, value string, expiration time.Duration) error {
 	if r.rdb == nil {
 		return nil

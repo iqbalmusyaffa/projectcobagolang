@@ -46,29 +46,52 @@ func getJWTSecret() []byte {
 
 // CustomClaims memuat payload data di dalam JWT token.
 type CustomClaims struct {
-	UserID uint   `json:"user_id"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
+	UserID    uint   `json:"user_id"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	TokenType string `json:"token_type"` // "access" atau "refresh"
 	jwt.RegisteredClaims
 }
 
-// GenerateToken membuat JWT token baru berdasarkan UserID, Email, & Role dengan durasi 24 jam.
-func GenerateToken(userID uint, email string, role string) (string, error) {
+// GenerateAccessToken membuat Access Token berdurasi SINGKAT (15 Menit).
+func GenerateAccessToken(userID uint, email string, role string) (string, error) {
 	if role == "" {
 		role = "admin"
 	}
 	claims := CustomClaims{
-		UserID: userID,
-		Email:  email,
-		Role:   role,
+		UserID:    userID,
+		Email:     email,
+		Role:      role,
+		TokenType: "access",
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)), // 15 Menit
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(getJWTSecret())
+}
+
+// GenerateRefreshToken membuat Refresh Token berdurasi PANJANG (7 Hari).
+func GenerateRefreshToken(userID uint, email string) (string, error) {
+	claims := CustomClaims{
+		UserID:    userID,
+		Email:     email,
+		TokenType: "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // 7 Hari
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(getJWTSecret())
+}
+
+// GenerateToken backward compatibility helper
+func GenerateToken(userID uint, email string, role string) (string, error) {
+	return GenerateAccessToken(userID, email, role)
 }
 
 // ValidateToken memverifikasi JWT token dan mengembalikan CustomClaims jika valid.

@@ -65,8 +65,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 2. Panggil Usecase untuk login & dapatkan JWT Token
-	token, err := h.userUsecase.Login(input)
+	// 2. Panggil Usecase untuk login & dapatkan Access & Refresh Token
+	tokenPair, err := h.userUsecase.Login(input)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"status":  "error",
@@ -75,12 +75,44 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 3. Kembalikan respons sukses 200 OK dengan Token
+	// 3. Kembalikan respons sukses 200 OK dengan Access Token & Refresh Token
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Login berhasil",
 		"data": gin.H{
-			"token": token,
+			"token":         tokenPair.AccessToken,  // Backward compatibility
+			"access_token":  tokenPair.AccessToken,
+			"refresh_token": tokenPair.RefreshToken,
+		},
+	})
+}
+
+// RefreshToken handler untuk POST /api/refresh-token
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+	var input entity.RefreshTokenInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Refresh token wajib diisi",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	newAccessToken, err := h.userUsecase.RefreshToken(input.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Access token baru berhasil diterbitkan",
+		"data": gin.H{
+			"access_token": newAccessToken,
 		},
 	})
 }

@@ -49,6 +49,7 @@ func main() {
 	{
 		api.POST("/register", userHandler.Register)
 		api.POST("/login", userHandler.Login)
+		api.POST("/refresh-token", userHandler.RefreshToken)
 	}
 
 	// API Routes Privat (Wajib Menggunakan Header 'Authorization: Bearer <token>')

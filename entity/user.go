@@ -54,6 +54,18 @@ type ChangeRoleInput struct {
 	Role   string `json:"role" binding:"required"` // superadmin, owner, admin
 }
 
+// RefreshTokenInput melambangkan data JSON saat meminta Access Token baru.
+type RefreshTokenInput struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// TokenPairResponse melambangkan pasangan Access Token & Refresh Token.
+type TokenPairResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+
 // FormatUser mengubah struct User menjadi UserResponse (menghilangkan password)
 func FormatUser(user User) UserResponse {
 	role := user.Role

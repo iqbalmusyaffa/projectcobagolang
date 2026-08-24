@@ -509,6 +509,8 @@ const handleLogout = async () => {
     // Ignore error if server unreachable
   } finally {
     localStorage.removeItem('token')
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
     router.push('/login')
   }
 }
