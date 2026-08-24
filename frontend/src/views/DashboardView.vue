@@ -141,52 +141,129 @@
           </h1>
         </div>
 
-        <!-- User Info Header dengan Responsive Dropdown -->
-        <div class="relative">
-          <div @click.stop="isDropdownOpen = !isDropdownOpen" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer select-none p-1.5 rounded-lg hover:bg-slate-100 transition">
-            <div class="text-right hidden sm:block">
-              <div class="flex items-center space-x-2 justify-end">
-                <span class="text-sm font-semibold text-slate-800">{{ user.name || 'Loading...' }}</span>
-                <!-- Role Badge Header -->
-                <span :class="roleBadgeClass(user.role)">{{ (user.role || 'admin').toUpperCase() }}</span>
-              </div>
-              <div class="text-xs text-slate-500">{{ user.email || 'Loading...' }}</div>
-            </div>
-            
-            <!-- Header Avatar Image / Initial -->
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center shadow text-sm sm:text-base overflow-hidden border border-indigo-200 shrink-0">
-              <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
-              <span v-else>{{ avatarInitial }}</span>
-            </div>
+        <!-- Actions Header Right: Notifikasi Lonceng & Profil Sesi -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Notification Bell Menu Popover -->
+          <div class="relative">
+            <button 
+              @click.stop="isNotificationOpen = !isNotificationOpen; isDropdownOpen = false" 
+              class="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition outline-none"
+              title="Notifikasi Sistem"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              <!-- Unread Badge Indicator -->
+              <span v-if="unreadCount > 0" class="absolute top-1 right-1 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-rose-600 text-[10px] font-bold text-white items-center justify-center">{{ unreadCount }}</span>
+              </span>
+            </button>
 
-            <svg class="w-4 h-4 text-slate-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
+            <!-- Notification Dropdown Popover Panel -->
+            <div v-if="isNotificationOpen" class="absolute -right-16 sm:right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 py-3 z-50 animate-in fade-in zoom-in duration-150">
+              <div class="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <h3 class="text-sm font-bold text-slate-900">Notifikasi Sistem</h3>
+                  <span v-if="unreadCount > 0" class="px-2 py-0.5 text-[10px] font-extrabold bg-rose-100 text-rose-700 rounded-full">{{ unreadCount }} Baru</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button @click="markAllAsRead" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold transition">Tandai Dibaca</button>
+                  <span class="text-slate-300">|</span>
+                  <button @click="clearNotifications" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition">Hapus</button>
+                </div>
+              </div>
+
+              <!-- List Notifikasi -->
+              <div class="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                <div 
+                  v-for="item in notifications" 
+                  :key="item.id" 
+                  @click="markAsRead(item.id)"
+                  :class="[
+                    'p-3.5 hover:bg-slate-50 transition cursor-pointer flex items-start space-x-3',
+                    !item.read ? 'bg-indigo-50/40' : ''
+                  ]"
+                >
+                  <div :class="[
+                    'p-2 rounded-xl shrink-0 mt-0.5',
+                    item.type === 'security' ? 'bg-emerald-100 text-emerald-600' :
+                    item.type === 'profile' ? 'bg-indigo-100 text-indigo-600' :
+                    'bg-purple-100 text-purple-600'
+                  ]">
+                    <svg v-if="item.type === 'security'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <svg v-else-if="item.type === 'profile'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <h4 :class="['text-xs font-bold truncate', !item.read ? 'text-indigo-950' : 'text-slate-700']">{{ item.title }}</h4>
+                      <span class="text-[10px] text-slate-400 shrink-0 ml-2">{{ formatRelativeTime(item.created_at) }}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">{{ item.message }}</p>
+                  </div>
+                </div>
+
+                <div v-if="notifications.length === 0" class="p-6 text-center text-xs text-slate-400">
+                  Tidak ada notifikasi saat ini
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Dropdown Menu Vue 3 -->
-          <div v-if="isDropdownOpen" class="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in duration-150">
-            <div class="px-4 py-2 border-b border-slate-100">
-              <p class="text-sm font-bold text-slate-800 truncate">{{ user.name }}</p>
-              <p class="text-xs text-slate-500 truncate mb-1">{{ user.email }}</p>
-              <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
+          <!-- User Info Header Dropdown -->
+          <div class="relative">
+            <div @click.stop="isDropdownOpen = !isDropdownOpen; isNotificationOpen = false" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer select-none p-1.5 rounded-lg hover:bg-slate-100 transition">
+              <div class="text-right hidden sm:block">
+                <div class="flex items-center space-x-2 justify-end">
+                  <span class="text-sm font-semibold text-slate-800">{{ user.name || 'Loading...' }}</span>
+                  <!-- Role Badge Header -->
+                  <span :class="roleBadgeClass(user.role)">{{ (user.role || 'admin').toUpperCase() }}</span>
+                </div>
+                <div class="text-xs text-slate-500">{{ user.email || 'Loading...' }}</div>
+              </div>
+              
+              <!-- Header Avatar Image / Initial -->
+              <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center shadow text-sm sm:text-base overflow-hidden border border-indigo-200 shrink-0">
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                <span v-else>{{ avatarInitial }}</span>
+              </div>
+
+              <svg class="w-4 h-4 text-slate-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
             </div>
 
-            <a href="#" @click.prevent="activeTab = 'profile'; isDropdownOpen = false" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
-              <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              Profil Saya
-            </a>
+            <!-- Dropdown Menu Vue 3 -->
+            <div v-if="isDropdownOpen" class="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in duration-150">
+              <div class="px-4 py-2 border-b border-slate-100">
+                <p class="text-sm font-bold text-slate-800 truncate">{{ user.name }}</p>
+                <p class="text-xs text-slate-500 truncate mb-1">{{ user.email }}</p>
+                <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
+              </div>
 
-            <div class="border-t border-slate-100 my-1"></div>
+              <a href="#" @click.prevent="activeTab = 'profile'; isDropdownOpen = false" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
+                <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Profil Saya
+              </a>
 
-            <button @click="handleLogout" class="w-full text-left flex items-center px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium transition">
-              <svg class="w-4 h-4 mr-2.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
-              Keluar (Logout)
-            </button>
+              <div class="border-t border-slate-100 my-1"></div>
+
+              <button @click="handleLogout" class="w-full text-left flex items-center px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium transition">
+                <svg class="w-4 h-4 mr-2.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Keluar (Logout)
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -855,6 +932,60 @@ const isAdminDeleting = ref(false)
 const selectedFile = ref(null)
 const allUsers = ref([])
 
+const isNotificationOpen = ref(false)
+const notifications = ref([
+  {
+    id: 1,
+    title: 'Sesi Autentikasi Berhasil',
+    message: 'Login sebagai SUPERADMIN dengan Dual Token JWT & Redis Blacklist.',
+    type: 'security',
+    read: false,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 2,
+    title: 'Profil Terintegrasi',
+    message: 'Biodata profil lengkap (No. HP, Gender, Tgl Lahir, Alamat, Bio) telah disinkronkan.',
+    type: 'profile',
+    read: false,
+    created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+  },
+  {
+    id: 3,
+    title: 'Database AutoMigrate Active',
+    message: 'PostgreSQL & Seeder 3 Akun Default (Super Admin, Owner, Admin) berjalan normal.',
+    type: 'system',
+    read: false,
+    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString()
+  }
+])
+
+const unreadCount = computed(() => {
+  return notifications.value.filter(n => !n.read).length
+})
+
+const markAllAsRead = () => {
+  notifications.value.forEach(n => n.read = true)
+}
+
+const clearNotifications = () => {
+  notifications.value = []
+}
+
+const markAsRead = (id) => {
+  const item = notifications.value.find(n => n.id === id)
+  if (item) item.read = true
+}
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return ''
+  const diffSec = Math.floor((new Date() - new Date(dateStr)) / 1000)
+  if (diffSec < 60) return 'Baru saja'
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} mnt lalu`
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} jam lalu`
+  return `${Math.floor(diffSec / 86400)} hr lalu`
+}
+
 const addUserForm = reactive({
   name: '',
   email: '',
@@ -969,6 +1100,15 @@ const roleBadgeClass = (role) => {
 const showAlert = (message, isSuccess = true) => {
   alert.message = message
   alert.isSuccess = isSuccess
+
+  notifications.value.unshift({
+    id: Date.now(),
+    title: isSuccess ? 'Aktivitas Berhasil' : 'Peringatan Sistem',
+    message: message,
+    type: isSuccess ? 'profile' : 'security',
+    read: false,
+    created_at: new Date().toISOString()
+  })
 
   setTimeout(() => {
     alert.message = ''
@@ -1231,6 +1371,7 @@ const handleLogout = async () => {
 
 const closeDropdownOnOutsideClick = () => {
   isDropdownOpen.value = false
+  isNotificationOpen.value = false
 }
 
 onMounted(() => {
