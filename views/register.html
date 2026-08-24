@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - TailAdmin Golang Auth</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-slate-200">
+    <!-- Brand / Header -->
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 text-white rounded-lg font-bold text-xl mb-3 shadow">
+        TA
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900">Buat Akun Baru</h2>
+      <p class="text-sm text-slate-500 mt-1">Daftar sekarang untuk mengakses Dashboard TailAdmin</p>
+    </div>
+
+    <!-- Error / Success Alert -->
+    <div id="alertBox" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+
+    <!-- Form Register -->
+    <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+        <input type="text" id="name" required placeholder="Masukkan nama Anda"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Alamat Email</label>
+        <input type="email" id="email" required placeholder="nama@email.com"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+        <input type="password" id="password" required placeholder="Minimal 6 karakter"
+          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm">
+      </div>
+
+      <button type="submit" id="btnSubmit"
+        class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm">
+        Daftar Akun
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="mt-6 text-center text-sm text-slate-500">
+      Sudah punya akun?
+      <a href="/login" class="text-indigo-600 hover:underline font-semibold">Masuk di sini</a>
+    </div>
+  </div>
+
+  <script>
+    async function handleRegister(event) {
+      event.preventDefault();
+      const alertBox = document.getElementById('alertBox');
+      const btnSubmit = document.getElementById('btnSubmit');
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = 'Memproses...';
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alertBox.className = "mb-4 p-3 rounded-lg text-sm bg-emerald-100 text-emerald-800 border border-emerald-300";
+          alertBox.innerText = "Registrasi berhasil! Mengalihkan ke halaman login...";
+          alertBox.classList.remove('hidden');
+
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+        } else {
+          alertBox.className = "mb-4 p-3 rounded-lg text-sm bg-rose-100 text-rose-800 border border-rose-300";
+          alertBox.innerText = result.message || "Gagal melakukan registrasi.";
+          alertBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        alertBox.className = "mb-4 p-3 rounded-lg text-sm bg-rose-100 text-rose-800 border border-rose-300";
+        alertBox.innerText = "Terjadi kesalahan koneksi ke server.";
+        alertBox.classList.remove('hidden');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = 'Daftar Akun';
+      }
+    }
+  </script>
+</body>
+</html>

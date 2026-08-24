@@ -1,0 +1,42 @@
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Binaries & Executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+dist/
+main
+
+# Database & Local storage
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+desktop.ini
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Log files & testing coverage
+*.log
+coverage.out
+profile.out

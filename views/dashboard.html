@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - TailAdmin Golang</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased flex min-h-screen">
+
+  <!-- Sidebar TailAdmin -->
+  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex min-h-screen">
+    <div>
+      <!-- Brand Logo -->
+      <div class="h-16 flex items-center px-6 border-b border-slate-800">
+        <div class="inline-flex items-center justify-center w-8 h-8 bg-indigo-600 text-white rounded-lg font-bold mr-3">
+          TA
+        </div>
+        <span class="text-lg font-bold text-white tracking-wide">TailAdmin</span>
+      </div>
+
+      <!-- Menu Items -->
+      <nav class="p-4 space-y-1">
+        <div class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Menu Utama</div>
+        
+        <a href="/dashboard" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-slate-800 text-white font-medium text-sm transition">
+          <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="#section-profile" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          <span>Edit Profil</span>
+        </a>
+
+        <a href="#section-password" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white font-medium text-sm transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          <span>Ganti Password</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- User & Logout Sidebar Footer -->
+    <div class="p-4 border-t border-slate-800">
+      <button onclick="handleLogout()" class="w-full flex items-center justify-center space-x-2 py-2 px-4 bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white rounded-lg transition text-sm font-semibold">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        <span>Keluar (Logout)</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    
+    <!-- Top Header -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+      <div class="flex items-center space-x-4">
+        <h1 class="text-xl font-bold text-slate-800">Overview Dashboard</h1>
+      </div>
+
+      <!-- User Info Header with Interactive Dropdown -->
+      <div class="relative">
+        <div onclick="toggleProfileDropdown(event)" class="flex items-center space-x-3 cursor-pointer select-none p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <div class="text-right hidden sm:block">
+            <div id="headerUserName" class="text-sm font-semibold text-slate-800">Loading...</div>
+            <div id="headerUserEmail" class="text-xs text-slate-500">Loading...</div>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center shadow" id="userAvatar">
+            U
+          </div>
+          <!-- Chevron Icon -->
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50">
+          <div class="px-4 py-2 border-b border-slate-100">
+            <p id="dropdownName" class="text-sm font-bold text-slate-800 truncate">Loading...</p>
+            <p id="dropdownEmail" class="text-xs text-slate-500 truncate">Loading...</p>
+          </div>
+
+          <a href="#section-profile" onclick="closeProfileDropdown()" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
+            <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Edit Profil
+          </a>
+
+          <a href="#section-password" onclick="closeProfileDropdown()" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition">
+            <svg class="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            Ganti Password
+          </a>
+
+          <div class="border-t border-slate-100 my-1"></div>
+
+          <button onclick="handleLogout()" class="w-full text-left flex items-center px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-medium transition">
+            <svg class="w-4 h-4 mr-2.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Keluar (Logout)
+          </button>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- Main Body Section -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- Global Alert Box -->
+      <div id="alertBox" class="hidden p-4 rounded-xl text-sm font-medium transition shadow-sm"></div>
+
+      <!-- Stat Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Card 1 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Status Akun</p>
+            <h3 class="text-xl font-bold text-emerald-600 mt-1">Aktif & Terverifikasi</h3>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Autentikasi</p>
+            <h3 class="text-xl font-bold text-slate-800 mt-1">JWT Bearer Token</h3>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Database</p>
+            <h3 class="text-xl font-bold text-slate-800 mt-1">PostgreSQL</h3>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- User Profile Information Card -->
+      <div id="section-profile" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-slate-900">Informasi Pengguna (Profile)</h2>
+          <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">REST API Data</span>
+        </div>
+
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">User ID</label>
+              <p id="profileId" class="text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">-</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nama Lengkap</label>
+              <p id="profileName" class="text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">-</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</label>
+              <p id="profileEmail" class="text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">-</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tanggal Terdaftar</label>
+              <p id="profileCreatedAt" class="text-base font-bold text-slate-800 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Forms Section: Edit Profil & Ganti Password -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Form Edit Profil Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+              <h3 class="text-lg font-bold text-slate-900">Edit Profil</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Perbarui nama dan alamat email akun Anda</p>
+            </div>
+
+            <form id="editProfileForm" onsubmit="handleUpdateProfile(event)" class="p-6 space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                <input type="text" id="editName" required placeholder="Nama Anda"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Alamat Email</label>
+                <input type="email" id="editEmail" required placeholder="nama@email.com"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+              </div>
+
+              <button type="submit" id="btnUpdateProfile"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm">
+                Simpan Perubahan Profil
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Form Ganti Password Card -->
+        <div id="section-password" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+              <h3 class="text-lg font-bold text-slate-900">Ganti Password</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Perbarui kata sandi untuk mengamankan akun Anda</p>
+            </div>
+
+            <form id="changePasswordForm" onsubmit="handleChangePassword(event)" class="p-6 space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Saat Ini (Lama)</label>
+                <input type="password" id="oldPassword" required placeholder="••••••••"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password Baru (Min 6 Karakter)</label>
+                <input type="password" id="newPassword" required placeholder="••••••••"
+                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm">
+              </div>
+
+              <button type="submit" id="btnChangePassword"
+                class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm">
+                Perbarui Password
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+
+    // Jika tidak ada token, langsung lempar ke login
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    function showAlert(message, isSuccess = true) {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.className = isSuccess
+        ? "p-4 rounded-xl text-sm font-medium bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm"
+        : "p-4 rounded-xl text-sm font-medium bg-rose-100 text-rose-800 border border-rose-300 shadow-sm";
+      alertBox.innerText = message;
+      alertBox.classList.remove('hidden');
+
+      // Auto hide alert setelah 4 detik
+      setTimeout(() => {
+        alertBox.classList.add('hidden');
+      }, 4000);
+    }
+
+    // Ambil data profile dari backend Golang
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/profile', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
+        }
+
+        const result = await response.json();
+        const user = result.data;
+
+        // Render data ke UI Header & Profile Card & Dropdown
+        document.getElementById('headerUserName').innerText = user.name;
+        document.getElementById('headerUserEmail').innerText = user.email;
+        document.getElementById('dropdownName').innerText = user.name;
+        document.getElementById('dropdownEmail').innerText = user.email;
+        document.getElementById('userAvatar').innerText = user.name.charAt(0).toUpperCase();
+
+
+        document.getElementById('profileId').innerText = user.id;
+        document.getElementById('profileName').innerText = user.name;
+        document.getElementById('profileEmail').innerText = user.email;
+        document.getElementById('profileCreatedAt').innerText = new Date(user.created_at).toLocaleString('id-ID');
+
+        // Populate nilai awal ke form Edit Profil
+        document.getElementById('editName').value = user.name;
+        document.getElementById('editEmail').value = user.email;
+
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    }
+
+    // Handle Submit Form Edit Profil (PUT /api/profile)
+    async function handleUpdateProfile(event) {
+      event.preventDefault();
+      const btn = document.getElementById('btnUpdateProfile');
+      const name = document.getElementById('editName').value;
+      const email = document.getElementById('editEmail').value;
+
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        const response = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, email })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert("Profil Anda berhasil diperbarui!", true);
+          loadUserProfile(); // Refresh data di UI secara otomatis
+        } else {
+          showAlert(result.message || "Gagal mengedit profil", false);
+        }
+      } catch (err) {
+        showAlert("Terjadi kesalahan koneksi ke server", false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Simpan Perubahan Profil';
+      }
+    }
+
+    // Handle Submit Form Ganti Password (PUT /api/change-password)
+    async function handleChangePassword(event) {
+      event.preventDefault();
+      const btn = document.getElementById('btnChangePassword');
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+
+      btn.disabled = true;
+      btn.innerText = 'Memproses...';
+
+      try {
+        const response = await fetch('/api/change-password', {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showAlert("Password berhasil diperbarui!", true);
+          document.getElementById('changePasswordForm').reset();
+        } else {
+          showAlert(result.message || "Gagal mengganti password", false);
+        }
+      } catch (err) {
+        showAlert("Terjadi kesalahan koneksi ke server", false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Perbarui Password';
+      }
+    }
+
+    function toggleProfileDropdown(event) {
+      event.stopPropagation();
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    function closeProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+
+    // Close dropdown saat mengklik area mana saja di luar dropdown
+    window.addEventListener('click', function(e) {
+      closeProfileDropdown();
+    });
+
+    function handleLogout() {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+
+    // Load profile saat halaman selesai dibuka
+    loadUserProfile();
+  </script>
+
+</body>
+</html>
