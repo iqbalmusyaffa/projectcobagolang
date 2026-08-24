@@ -141,8 +141,21 @@
           </h1>
         </div>
 
-        <!-- Actions Header Right: Notifikasi Lonceng & Profil Sesi -->
+        <!-- Actions Header Right: Sinkron Data, Notifikasi Lonceng & Profil Sesi -->
         <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Tombol Sinkron Data -->
+          <button 
+            @click="handleSyncData" 
+            :disabled="isSyncing"
+            class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 disabled:opacity-50 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5"
+            title="Sinkronkan data terbaru dari database PostgreSQL"
+          >
+            <svg :class="['w-4 h-4 text-indigo-600', isSyncing ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span class="hidden sm:inline">{{ isSyncing ? 'Menyinkronkan...' : 'Sinkron Data' }}</span>
+          </button>
+
           <!-- Notification Bell Menu Popover -->
           <div class="relative">
             <button 
@@ -370,11 +383,17 @@
             <!-- Header Profile Card + Upload Avatar -->
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6">
               <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 text-center sm:text-left">
-                <!-- Avatar Preview -->
-                <div class="relative">
-                  <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-100 shadow-md" />
-                  <div v-else class="w-24 h-24 rounded-full bg-indigo-600 text-white font-extrabold text-3xl flex items-center justify-center border-4 border-indigo-100 shadow-md">
+                <!-- Avatar Preview (Click to Zoom & Download) -->
+                <div @click="openAvatarModal(user.name, avatarUrl)" class="relative group cursor-pointer shrink-0" title="Klik untuk perbesar & unduh foto">
+                  <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-100 shadow-md group-hover:scale-105 transition duration-200" />
+                  <div v-else class="w-24 h-24 rounded-full bg-indigo-600 text-white font-extrabold text-3xl flex items-center justify-center border-4 border-indigo-100 shadow-md group-hover:scale-105 transition duration-200">
                     {{ avatarInitial }}
+                  </div>
+                  <div class="absolute inset-0 bg-slate-900/40 rounded-full opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition duration-200 text-white text-[10px] font-bold">
+                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                    </svg>
+                    Lihat Foto
                   </div>
                 </div>
 
@@ -906,6 +925,50 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Pop-up Foto Profil & Download Avatar -->
+    <div v-if="isAvatarModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 p-6 flex flex-col items-center space-y-5 animate-in zoom-in duration-200 relative">
+        <button @click="isAvatarModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <div class="text-center">
+          <h3 class="text-lg font-bold text-slate-900">{{ avatarModalName }}</h3>
+          <p class="text-xs text-slate-500">Pratinjau Foto Profil (Avatar)</p>
+        </div>
+
+        <!-- High-res Image Preview -->
+        <div class="w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden border-4 border-indigo-100 shadow-xl bg-indigo-50 flex items-center justify-center">
+          <img v-if="avatarModalUrl" :src="avatarModalUrl" alt="Avatar Pop-up" class="w-full h-full object-cover" />
+          <div v-else class="w-full h-full bg-indigo-600 text-white font-extrabold text-6xl flex items-center justify-center">
+            {{ avatarInitial }}
+          </div>
+        </div>
+
+        <!-- Download & Action Buttons -->
+        <div class="flex items-center space-x-3 w-full pt-2">
+          <button 
+            @click="handleDownloadAvatar" 
+            :disabled="!avatarModalUrl"
+            class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs sm:text-sm font-semibold rounded-xl shadow transition flex items-center justify-center space-x-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span>Unduh Foto Profil</span>
+          </button>
+          <button 
+            @click="isAvatarModalOpen = false" 
+            class="px-5 py-2.5 border border-slate-300 text-slate-700 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 transition"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -929,6 +992,10 @@ const isAdminEditModalOpen = ref(false)
 const isAdminUpdating = ref(false)
 const isAdminDeleteModalOpen = ref(false)
 const isAdminDeleting = ref(false)
+const isSyncing = ref(false)
+const isAvatarModalOpen = ref(false)
+const avatarModalName = ref('')
+const avatarModalUrl = ref('')
 const selectedFile = ref(null)
 const allUsers = ref([])
 
@@ -1354,6 +1421,43 @@ const handleAdminDeleteUser = async () => {
   } finally {
     isAdminDeleting.value = false
   }
+}
+
+const handleSyncData = async () => {
+  isSyncing.value = true
+  try {
+    await loadUserProfile()
+    if (canManageUsers.value) {
+      await loadAllUsers()
+    }
+    showAlert('Data berhasil disinkronkan dari database PostgreSQL!', true)
+  } catch (err) {
+    showAlert('Gagal menyinkronkan data dari server', false)
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+const openAvatarModal = (name, url) => {
+  avatarModalName.value = name || user.name || 'Pengguna'
+  avatarModalUrl.value = url || avatarUrl.value || ''
+  isAvatarModalOpen.value = true
+}
+
+const handleDownloadAvatar = () => {
+  if (!avatarModalUrl.value) {
+    showAlert('Foto profil tidak tersedia untuk diunduh', false)
+    return
+  }
+
+  const link = document.createElement('a')
+  link.href = avatarModalUrl.value
+  link.download = `${(avatarModalName.value || 'profile').replace(/\s+/g, '_')}_avatar.png`
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  showAlert(`Foto profil '${avatarModalName.value}' berhasil diunduh!`, true)
 }
 
 const handleLogout = async () => {
