@@ -48,6 +48,18 @@ func SeedSuperAdmin(db *gorm.DB) {
 		Address:   "Jl. M.H. Thamrin No. 12, Jakarta Pusat",
 		Bio:       "Operational Staff & General Admin",
 	})
+
+	// 4. Seed Akun User Regular (Pengguna Biasa)
+	seedUser(db, entity.User{
+		Name:      "Rizky Pratama (User)",
+		Email:     "user@demo.com",
+		Password:  "password123",
+		Role:      "user",
+		Phone:     "081987654321",
+		Gender:    "Laki-laki",
+		Address:   "Jl. Asia Afrika No. 88, Bandung",
+		Bio:       "Pengguna Biasa / Regular User",
+	})
 }
 
 // Helper internal untuk mengecek & memasukkan seeder user

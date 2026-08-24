@@ -293,57 +293,70 @@
 
         <!-- TAB 1: MAIN DASHBOARD -->
         <template v-if="activeTab === 'dashboard'">
-          <!-- Stat Cards Grid 4 Kolom (Realtime dari PostgreSQL) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <!-- Stat Cards Grid 5 Kolom (Realtime dari PostgreSQL) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
             <!-- Card 1: Total Users -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3.5">
               <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Total Pengguna</p>
-                <h3 class="text-2xl font-black text-slate-900 mt-0.5">{{ stats.total_users || 0 }}</h3>
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">Total Akun</p>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-0.5">{{ stats.total_users || 0 }}</h3>
               </div>
             </div>
 
             <!-- Card 2: Superadmin Count -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3.5">
               <div class="p-3 bg-rose-50 text-rose-600 rounded-xl shrink-0">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Super Admin</p>
-                <h3 class="text-2xl font-black text-rose-600 mt-0.5">{{ stats.total_superadmin || 0 }}</h3>
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">Super Admin</p>
+                <h3 class="text-xl sm:text-2xl font-black text-rose-600 mt-0.5">{{ stats.total_superadmin || 0 }}</h3>
               </div>
             </div>
 
             <!-- Card 3: Owner Count -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3.5">
               <div class="p-3 bg-purple-50 text-purple-600 rounded-xl shrink-0">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Owner Laporan</p>
-                <h3 class="text-2xl font-black text-purple-600 mt-0.5">{{ stats.total_owner || 0 }}</h3>
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">Owner Laporan</p>
+                <h3 class="text-xl sm:text-2xl font-black text-purple-600 mt-0.5">{{ stats.total_owner || 0 }}</h3>
               </div>
             </div>
 
             <!-- Card 4: Admin Count -->
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3.5">
               <div class="p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
               </div>
               <div class="min-w-0">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Admin Standar</p>
-                <h3 class="text-2xl font-black text-blue-600 mt-0.5">{{ stats.total_admin || 0 }}</h3>
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">Admin Standar</p>
+                <h3 class="text-xl sm:text-2xl font-black text-blue-600 mt-0.5">{{ stats.total_admin || 0 }}</h3>
+              </div>
+            </div>
+
+            <!-- Card 5: User Regular Count -->
+            <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3.5">
+              <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+                <svg class="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">User Biasa</p>
+                <h3 class="text-xl sm:text-2xl font-black text-emerald-600 mt-0.5">{{ stats.total_user_role || 0 }}</h3>
               </div>
             </div>
           </div>
@@ -683,10 +696,11 @@
                       <div class="flex items-center justify-center space-x-2">
                         <!-- Quick Role Selector -->
                         <select
-                          :value="u.role || 'admin'"
+                          :value="u.role || 'user'"
                           @change="handleChangeRole(u.id, $event.target.value)"
                           class="px-2 py-1 text-xs border border-slate-300 rounded-md outline-none bg-white font-medium"
                         >
+                          <option value="user">USER</option>
                           <option value="admin">ADMIN</option>
                           <option value="owner">OWNER</option>
                           <option value="superadmin">SUPERADMIN</option>
@@ -783,7 +797,8 @@
               v-model="addUserForm.role"
               class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm bg-white font-medium"
             >
-              <option value="admin">ADMIN (Standar)</option>
+              <option value="user">USER (Pengguna Biasa)</option>
+              <option value="admin">ADMIN (Admin Standar)</option>
               <option value="owner">OWNER (Pemilik Laporan)</option>
               <option value="superadmin">SUPERADMIN (Hak Akses Penuh)</option>
             </select>
@@ -872,7 +887,8 @@
                 v-model="adminEditForm.role"
                 class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white font-medium"
               >
-                <option value="admin">ADMIN (Standar)</option>
+                <option value="user">USER (Pengguna Biasa)</option>
+                <option value="admin">ADMIN (Admin Standar)</option>
                 <option value="owner">OWNER (Pemilik Laporan)</option>
                 <option value="superadmin">SUPERADMIN (Hak Akses Penuh)</option>
               </select>
@@ -1053,7 +1069,8 @@ const stats = reactive({
   total_users: 0,
   total_superadmin: 0,
   total_owner: 0,
-  total_admin: 0
+  total_admin: 0,
+  total_user_role: 0
 })
 
 const roleDoughnutChartCanvas = ref(null)
@@ -1221,8 +1238,11 @@ const roleBadgeClass = (role) => {
       return 'px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200'
     case 'owner':
       return 'px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200'
-    default:
+    case 'admin':
       return 'px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200'
+    case 'user':
+    default:
+      return 'px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200'
   }
 }
 
@@ -1269,6 +1289,33 @@ const loadUserProfile = async () => {
     editForm.birth_date = data.birth_date || ''
     editForm.address = data.address || ''
     editForm.bio = data.bio || ''
+
+    notifications.value = [
+      {
+        id: 1,
+        title: 'Sesi Autentikasi Berhasil',
+        message: `Login sebagai ${user.name} (${(user.role || 'admin').toUpperCase()}) dengan Dual Token JWT & Redis Blacklist.`,
+        type: 'security',
+        read: false,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: 'Profil Terintegrasi',
+        message: 'Biodata profil lengkap (No. HP, Gender, Tgl Lahir, Alamat, Bio) telah disinkronkan.',
+        type: 'profile',
+        read: false,
+        created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      },
+      {
+        id: 3,
+        title: 'Database AutoMigrate Active',
+        message: 'PostgreSQL & Seeder 3 Akun Default (Super Admin, Owner, Admin) berjalan normal.',
+        type: 'system',
+        read: false,
+        created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString()
+      }
+    ]
   } catch (err) {
     localStorage.removeItem('token')
     router.push('/login')
@@ -1493,6 +1540,7 @@ const loadDashboardStats = async () => {
     stats.total_superadmin = d.total_superadmin || 0
     stats.total_owner = d.total_owner || 0
     stats.total_admin = d.total_admin || 0
+    stats.total_user_role = d.total_user_role || 0
 
     await nextTick()
     renderCharts()
@@ -1505,8 +1553,9 @@ const renderCharts = () => {
   if (doughnutChartInstance) doughnutChartInstance.destroy()
   if (barChartInstance) barChartInstance.destroy()
 
-  const labels = ['SUPERADMIN', 'OWNER', 'ADMIN']
-  const dataValues = [stats.total_superadmin, stats.total_owner, stats.total_admin]
+  const labels = ['SUPERADMIN', 'OWNER', 'ADMIN', 'USER']
+  const dataValues = [stats.total_superadmin, stats.total_owner, stats.total_admin, stats.total_user_role]
+  const colors = ['#e11d48', '#9333ea', '#2563eb', '#10b981']
 
   if (roleDoughnutChartCanvas.value) {
     doughnutChartInstance = new Chart(roleDoughnutChartCanvas.value, {
@@ -1515,7 +1564,7 @@ const renderCharts = () => {
         labels: labels,
         datasets: [{
           data: dataValues,
-          backgroundColor: ['#e11d48', '#9333ea', '#2563eb'],
+          backgroundColor: colors,
           borderWidth: 2,
           borderColor: '#ffffff'
         }]
@@ -1541,7 +1590,7 @@ const renderCharts = () => {
         datasets: [{
           label: 'Jumlah Pengguna',
           data: dataValues,
-          backgroundColor: ['rgba(225, 29, 72, 0.85)', 'rgba(147, 51, 234, 0.85)', 'rgba(37, 99, 235, 0.85)'],
+          backgroundColor: ['rgba(225, 29, 72, 0.85)', 'rgba(147, 51, 234, 0.85)', 'rgba(37, 99, 235, 0.85)', 'rgba(16, 185, 129, 0.85)'],
           borderRadius: 8,
           borderWidth: 0
         }]

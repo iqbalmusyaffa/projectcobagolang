@@ -115,6 +115,7 @@ type DashboardStats struct {
 	TotalSuperadmin int64 `json:"total_superadmin"`
 	TotalOwner      int64 `json:"total_owner"`
 	TotalAdmin      int64 `json:"total_admin"`
+	TotalUserRole   int64 `json:"total_user_role"`
 }
 
 
@@ -122,7 +123,7 @@ type DashboardStats struct {
 func FormatUser(user User) UserResponse {
 	role := user.Role
 	if role == "" {
-		role = "admin"
+		role = "user"
 	}
 	birthDateStr := ""
 	if user.BirthDate != nil {
