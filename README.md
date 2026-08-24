@@ -121,7 +121,19 @@ npm run dev
 
 ---
 
-## 👤 Akun Super Admin Default (Seeder)
-- **Email:** `faridwimansyah8@gmail.com`
-- **Password:** `password123`
-- **Role:** `superadmin`
+## 👤 Akun Default (Database Seeder)
+
+Aplikasi secara otomatis menyisipkan 3 akun default beserta biodata awal setiap kali server Golang dinyalakan (`go run main.go`):
+
+| Role | Email | Password | Hak Akses |
+| :--- | :--- | :--- | :--- |
+| **SUPERADMIN** | `faridwimansyah8@gmail.com` | `password123` | Hak Akses Penuh Sistem (CRUD User, Switch Role) |
+| **OWNER** | `owner@demo.com` | `password123` | Akses Laporan & Manajemen User Read-only |
+| **ADMIN** | `admin@demo.com` | `password123` | Akses Admin Standar |
+
+---
+
+## ⚡ Cara Kerja Auto-Migrate & Seeder
+
+1. **Auto-Migrate GORM:** `config.InitDB()` memanggil `db.AutoMigrate(&entity.User{})`. GORM akan otomatis membuat tabel `users` di PostgreSQL dan mendeteksi perubahan kolom baru (`phone`, `gender`, `birth_date`, `address`, `bio`, `avatar`, `deleted_at`).
+2. **Database Seeding:** Setelah migrasi skema tabel selesai, `config.SeedSuperAdmin(db)` otomatis memeriksa ketersediaan email seeder. Jika belum ada di database, ketiga akun di atas akan disisipkan secara otomatis.
