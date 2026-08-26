@@ -19,9 +19,23 @@ type User struct {
 	BirthDate *time.Time     `gorm:"type:date" json:"birth_date"`
 	Address   string         `gorm:"type:text" json:"address"`
 	Bio       string         `gorm:"type:text" json:"bio"`
+	ResetToken          string     `gorm:"type:varchar(255)" json:"-"`
+	ResetTokenExpiresAt *time.Time `json:"-"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// ForgotPasswordInput melambangkan data JSON saat meminta kode reset password.
+type ForgotPasswordInput struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// ResetPasswordInput melambangkan data JSON saat mereset password dengan OTP.
+type ResetPasswordInput struct {
+	Email       string `json:"email" binding:"required,email"`
+	OTP         string `json:"otp" binding:"required,len=6"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
 // RegisterInput melambangkan data JSON yang dikirim client saat Registrasi.
@@ -96,6 +110,12 @@ type AdminUpdateUserInput struct {
 	BirthDate string `json:"birth_date"`
 	Address   string `json:"address"`
 	Bio       string `json:"bio"`
+}
+
+// AdminResetPasswordInput melambangkan data JSON saat Super Admin mereset password pengguna secara langsung.
+type AdminResetPasswordInput struct {
+	UserID      uint   `json:"user_id" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
 // RefreshTokenInput melambangkan data JSON saat meminta Access Token baru.

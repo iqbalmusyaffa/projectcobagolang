@@ -122,6 +122,60 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
+// ForgotPassword handler untuk POST /api/forgot-password
+func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	var input entity.ForgotPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Alamat email tidak valid",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err := h.userUsecase.RequestPasswordReset(input.Email)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Kode OTP reset password berhasil dikirim ke email Anda",
+	})
+}
+
+// ResetPassword handler untuk POST /api/reset-password
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	var input entity.ResetPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Input tidak valid. Pastikan OTP 6-digit dan password minimal 6 karakter",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err := h.userUsecase.ResetPassword(input.Email, input.OTP, input.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Password Anda berhasil diperbarui. Silakan login dengan password baru.",
+	})
+}
+
 // Profile handler untuk endpoint GET /api/profile (Protected Endpoint)
 func (h *UserHandler) Profile(c *gin.Context) {
 	// 1. Ambil userID yang diset oleh AuthMiddleware
@@ -474,6 +528,33 @@ func (h *UserHandler) AdminDeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Pengguna berhasil dihapus oleh Super Admin (Soft Delete)",
+	})
+}
+
+// AdminResetPassword handler untuk PUT /api/superadmin/users/reset-password (Khusus Superadmin)
+func (h *UserHandler) AdminResetPassword(c *gin.Context) {
+	var input entity.AdminResetPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Input reset password tidak valid. Pastikan new_password minimal 6 karakter.",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err := h.userUsecase.AdminResetUserPassword(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Password pengguna berhasil diperbarui secara langsung oleh Super Admin",
 	})
 }
 

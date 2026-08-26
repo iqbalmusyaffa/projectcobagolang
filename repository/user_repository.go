@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"projectgolangnyoba/entity"
 
 	"gorm.io/gorm"
@@ -15,6 +17,8 @@ type UserRepository interface {
 	Update(user *entity.User) error
 	Delete(id uint) error
 	GetDashboardStats() (entity.DashboardStats, error)
+	SaveResetToken(email, token string, expiresAt time.Time) error
+	ClearResetToken(userID uint) error
 }
 
 // userRepository implementasi konkret dari UserRepository yang menggunakan GORM.
@@ -67,6 +71,22 @@ func (r *userRepository) Update(user *entity.User) error {
 // Delete melakukan Soft Delete data User berdasarkan Primary Key (ID).
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&entity.User{}, id).Error
+}
+
+// SaveResetToken menyimpan token reset password & waktu kadaluarsanya ke database.
+func (r *userRepository) SaveResetToken(email, token string, expiresAt time.Time) error {
+	return r.db.Model(&entity.User{}).Where("email = ?", email).Updates(map[string]interface{}{
+		"reset_token":            token,
+		"reset_token_expires_at": expiresAt,
+	}).Error
+}
+
+// ClearResetToken menghapus token reset password setelah berhasil digunakan.
+func (r *userRepository) ClearResetToken(userID uint) error {
+	return r.db.Model(&entity.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"reset_token":            "",
+		"reset_token_expires_at": nil,
+	}).Error
 }
 
 // GetDashboardStats menghitung statistik ringkasan total user & distribusi role dari PostgreSQL.

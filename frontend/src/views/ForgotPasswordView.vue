@@ -21,11 +21,15 @@
         <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 text-white rounded-lg font-bold text-xl mb-3 shadow">
           TA
         </div>
-        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Buat Akun Baru</h2>
-        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar Vue 3 + TailAdmin Dashboard</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+          {{ step === 1 ? 'Lupa Password?' : 'Masukkan Kode OTP' }}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+          {{ step === 1 ? 'Masukkan email Anda untuk menerima kode OTP 6-digit.' : 'Kode OTP 6-digit telah dikirim ke email Anda.' }}
+        </p>
       </div>
 
-      <!-- Alert -->
+      <!-- Alert Notification -->
       <div v-if="alert.message" :class="[
         'mb-4 p-3 rounded-lg text-sm border',
         alert.isSuccess ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
@@ -33,19 +37,8 @@
         {{ alert.message }}
       </div>
 
-      <!-- Form Register Vue 3 -->
-      <form @submit.prevent="handleRegister" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nama Lengkap</label>
-          <input
-            v-model="name"
-            type="text"
-            required
-            placeholder="Nama Anda"
-            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition"
-          />
-        </div>
-
+      <!-- LANGKAH 1: Minta OTP via Email -->
+      <form v-if="step === 1" @submit.prevent="handleRequestOTP" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Alamat Email</label>
           <input
@@ -57,11 +50,44 @@
           />
         </div>
 
+        <button
+          type="submit"
+          :disabled="isLoading"
+          class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm flex items-center justify-center space-x-2"
+        >
+          <span>{{ isLoading ? 'Mengirim Kode OTP...' : 'Kirim Kode OTP' }}</span>
+        </button>
+      </form>
+
+      <!-- LANGKAH 2: Masukkan Kode OTP & Password Baru -->
+      <form v-else @submit.prevent="handleResetPassword" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Password</label>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Alamat Email</label>
+          <input
+            v-model="email"
+            type="email"
+            readonly
+            class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg outline-none text-sm font-medium cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Kode OTP (6-Digit)</label>
+          <input
+            v-model="otp"
+            type="text"
+            required
+            maxlength="6"
+            placeholder="Contoh: 123456"
+            class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm text-center tracking-widest font-mono text-base font-bold transition"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Password Baru</label>
           <div class="relative">
             <input
-              v-model="password"
+              v-model="newPassword"
               :type="showPassword ? 'text' : 'password'"
               required
               placeholder="Minimal 6 karakter"
@@ -89,13 +115,23 @@
           :disabled="isLoading"
           class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-md transition duration-200 text-sm"
         >
-          {{ isLoading ? 'Memproses...' : 'Daftar Akun' }}
+          {{ isLoading ? 'Mereset Password...' : 'Reset Password Sekarang' }}
         </button>
+
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
+          <button type="button" @click="step = 1" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">
+            &larr; Ubah Email
+          </button>
+          <button type="button" @click="handleRequestOTP" :disabled="isLoading" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+            Kirim Ulang OTP
+          </button>
+        </div>
       </form>
 
+      <!-- Back to Login -->
       <div class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-        Sudah punya akun?
-        <router-link to="/login" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Masuk di sini</router-link>
+        Kembali ke halaman
+        <router-link to="/login" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Masuk (Login)</router-link>
       </div>
     </div>
   </div>
@@ -109,9 +145,11 @@ import { useTheme } from '../utils/theme'
 
 const { isDarkMode, toggleTheme } = useTheme()
 const router = useRouter()
-const name = ref('')
+
+const step = ref(1)
 const email = ref('')
-const password = ref('')
+const otp = ref('')
+const newPassword = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 
@@ -120,28 +158,48 @@ const alert = reactive({
   isSuccess: false
 })
 
-const handleRegister = async () => {
+const handleRequestOTP = async () => {
+  if (!email.value) return
   isLoading.value = true
   alert.message = ''
 
   try {
-    const res = await api.post('/register', {
-      name: name.value,
-      email: email.value,
-      password: password.value
+    const res = await api.post('/forgot-password', {
+      email: email.value
     })
 
-    if (res.status === 201 || res.data.status === 'success') {
-      alert.isSuccess = true
-      alert.message = 'Registrasi akun berhasil! Mengalihkan ke halaman Login...'
-
-      setTimeout(() => {
-        router.push('/login')
-      }, 1200)
-    }
+    alert.isSuccess = true
+    alert.message = res.data?.message || 'Kode OTP telah berhasil dikirim ke email Anda.'
+    step.value = 2
   } catch (err) {
     alert.isSuccess = false
-    alert.message = err.response?.data?.message || 'Gagal registrasi'
+    alert.message = err.response?.data?.message || 'Gagal meminta kode OTP. Cek kembali email Anda.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleResetPassword = async () => {
+  if (!email.value || !otp.value || !newPassword.value) return
+  isLoading.value = true
+  alert.message = ''
+
+  try {
+    const res = await api.post('/reset-password', {
+      email: email.value,
+      otp: otp.value,
+      new_password: newPassword.value
+    })
+
+    alert.isSuccess = true
+    alert.message = res.data?.message || 'Password berhasil diperbarui! Mengalihkan ke Halaman Login...'
+
+    setTimeout(() => {
+      router.push('/login')
+    }, 1500)
+  } catch (err) {
+    alert.isSuccess = false
+    alert.message = err.response?.data?.message || 'Gagal mereset password. Pastikan kode OTP benar.'
   } finally {
     isLoading.value = false
   }

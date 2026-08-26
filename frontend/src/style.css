@@ -5,4 +5,11 @@
 html, body {
   min-height: 100vh;
   margin: 0;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+html.dark body {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+}
+

@@ -41,16 +41,21 @@ func main() {
 	// Serve Static Files untuk Folder Gambar Avatar
 	r.Static("/images", "./images")
 
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
 	// Web Routes (API Status & Auto-Redirect ke Vue 3 Frontend)
 	r.GET("/", userHandler.ShowAPIStatus)
 	r.GET("/login", func(c *gin.Context) {
-		c.Redirect(302, "http://localhost:5173/login")
+		c.Redirect(302, fmt.Sprintf("%s/login", frontendURL))
 	})
 	r.GET("/register", func(c *gin.Context) {
-		c.Redirect(302, "http://localhost:5173/register")
+		c.Redirect(302, fmt.Sprintf("%s/register", frontendURL))
 	})
 	r.GET("/dashboard", func(c *gin.Context) {
-		c.Redirect(302, "http://localhost:5173/dashboard")
+		c.Redirect(302, fmt.Sprintf("%s/dashboard", frontendURL))
 	})
 
 	// API Routes Publik (Tanpa Autentikasi)
@@ -59,6 +64,8 @@ func main() {
 		api.POST("/register", userHandler.Register)
 		api.POST("/login", userHandler.Login)
 		api.POST("/refresh-token", userHandler.RefreshToken)
+		api.POST("/forgot-password", userHandler.ForgotPassword)
+		api.POST("/reset-password", userHandler.ResetPassword)
 	}
 
 	// API Routes Privat (Wajib Menggunakan Header 'Authorization: Bearer <token>')
@@ -88,6 +95,7 @@ func main() {
 			superadminGroup.POST("/users", userHandler.CreateUserByAdmin)
 			superadminGroup.PUT("/users", userHandler.AdminUpdateUser)
 			superadminGroup.DELETE("/users/:id", userHandler.AdminDeleteUser)
+			superadminGroup.PUT("/users/reset-password", userHandler.AdminResetPassword)
 		}
 	}
 
