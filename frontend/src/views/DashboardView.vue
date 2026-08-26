@@ -992,10 +992,17 @@
                     <th class="py-3 px-4">IP Address</th>
                     <th class="py-3 px-4">Browser / Device</th>
                     <th class="py-3 px-4 text-right">Waktu</th>
+                    <th class="py-3 px-4 text-center">Rincian</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-                  <tr v-for="log in filteredAuditLogs" :key="log.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                  <tr
+                    v-for="log in filteredAuditLogs"
+                    :key="log.id"
+                    @click="openAuditDetailModal(log)"
+                    class="hover:bg-amber-50/60 dark:hover:bg-slate-800/80 transition cursor-pointer"
+                    title="Klik untuk melihat detail lengkap catatan aktivitas ini 🔍"
+                  >
                     <td class="py-3.5 px-4 font-bold text-slate-500 dark:text-slate-400 text-xs">#{{ log.id }}</td>
                     <td class="py-3.5 px-4">
                       <div class="flex items-center space-x-2">
@@ -1017,6 +1024,20 @@
                     </td>
                     <td class="py-3.5 px-4 text-xs text-right font-medium text-slate-500 dark:text-slate-400">
                       {{ new Date(log.created_at).toLocaleString('id-ID') }}
+                    </td>
+                    <td class="py-3.5 px-4 text-center">
+                      <button
+                        type="button"
+                        @click.stop="openAuditDetailModal(log)"
+                        class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white rounded-lg transition text-xs font-semibold inline-flex items-center space-x-1 cursor-pointer"
+                        title="Lihat Rincian Detail Log"
+                      >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>Detail</span>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -1448,6 +1469,83 @@
           </button>
           <button @click="executePermanentDeleteUser" :disabled="isPermanentlyDeletingUser" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
             {{ isPermanentlyDeletingUser ? 'Menghapus...' : 'Ya, Hapus Permanen' }}
+          </button>
+    <!-- Modal Pop-up Detail Catatan Aktivitas (Audit Log Detail) -->
+    <div v-if="isAuditDetailModalOpen && selectedAuditLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+        <!-- Header Modal -->
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <div class="p-2 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Rincian Audit Log #{{ selectedAuditLog.id }}</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Catatan Detail Aktivitas Pengguna</p>
+            </div>
+          </div>
+          <button @click="isAuditDetailModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Body Detail Modal -->
+        <div class="p-6 space-y-4 overflow-y-auto text-sm">
+          <!-- Pengguna Info -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+            <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aktor / Pengguna</div>
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-900 dark:text-white text-base">{{ selectedAuditLog.user_name }}</span>
+              <span :class="roleBadgeClass(selectedAuditLog.user_role)">{{ (selectedAuditLog.user_role || 'user').toUpperCase() }}</span>
+            </div>
+            <div v-if="selectedAuditLog.user_id" class="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              User ID: #{{ selectedAuditLog.user_id }}
+            </div>
+          </div>
+
+          <!-- Deskripsi Aksi -->
+          <div class="p-3.5 bg-amber-50/60 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/60 space-y-1">
+            <div class="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Aktivitas / Tindakan Yang Dilakukan</div>
+            <div class="font-bold text-amber-950 dark:text-amber-200 text-sm sm:text-base flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+              <span>{{ selectedAuditLog.action }}</span>
+            </div>
+          </div>
+
+          <!-- IP & Time Info -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
+              <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">IP Address</div>
+              <div class="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800 inline-block">
+                {{ selectedAuditLog.ip_address || '127.0.0.1' }}
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
+              <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Waktu Kejadian</div>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                {{ new Date(selectedAuditLog.created_at).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' }) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Browser User Agent -->
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+            <div class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Browser & User-Agent Perangkat</div>
+            <div class="font-mono text-xs text-slate-700 dark:text-slate-300 break-all leading-relaxed bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
+              {{ selectedAuditLog.user_agent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Web Browser' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+          <button @click="isAuditDetailModalOpen = false" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-semibold rounded-lg transition cursor-pointer">
+            Tutup Rincian
           </button>
         </div>
       </div>
@@ -2173,6 +2271,13 @@ const renderCharts = () => {
 const auditLogs = ref([])
 const isLoadingAuditLogs = ref(false)
 const auditSearchQuery = ref('')
+const isAuditDetailModalOpen = ref(false)
+const selectedAuditLog = ref(null)
+
+const openAuditDetailModal = (log) => {
+  selectedAuditLog.value = log
+  isAuditDetailModalOpen.value = true
+}
 
 const loadAuditLogs = async () => {
   isLoadingAuditLogs.value = true
