@@ -26,6 +26,9 @@ type UserUsecase interface {
 	LogoutToken(token string) error
 	DeleteAccount(userID uint, token string) error
 	GetDashboardStats() (entity.DashboardStats, error)
+	RequestPasswordReset(email string) error
+	ResetPassword(email, otp, newPassword string) error
+	AdminResetUserPassword(input entity.AdminResetPasswordInput) error
 }
 
 // userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository & RedisRepository.
@@ -419,4 +422,111 @@ func (u *userUsecase) AdminDeleteUser(targetUserID uint) error {
 // GetDashboardStats mengambil data statistik ringkasan total pengguna & role.
 func (u *userUsecase) GetDashboardStats() (entity.DashboardStats, error) {
 	return u.userRepo.GetDashboardStats()
+}
+
+// RequestPasswordReset memproses permintaan OTP untuk reset password via email.
+func (u *userUsecase) RequestPasswordReset(email string) error {
+	// 1. Cari user berdasarkan email
+	user, err := u.userRepo.FindByEmail(email)
+	if err != nil || user == nil {
+		return errors.New("email tidak terdaftar di sistem")
+	}
+
+	// 2. Generate kode OTP 6 digit
+	otpCode, err := utils.GenerateOTP()
+	if err != nil {
+		return errors.New("gagal menghasilkan kode OTP")
+	}
+
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	// 3. Simpan OTP di Redis jika Redis tersedia (TTL 15 Menit)
+	if u.redisRepo != nil {
+		_ = u.redisRepo.SetCache("reset_code:"+email, otpCode, 15*time.Minute)
+	}
+
+	// 4. Simpan ke database sebagai fallback
+	_ = u.userRepo.SaveResetToken(email, otpCode, expiresAt)
+
+	// 5. Kirim email berisi OTP
+	return utils.SendResetPasswordEmail(email, otpCode)
+}
+
+// ResetPassword memverifikasi OTP dan mengganti password pengguna dengan yang baru.
+func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
+	// 1. Cari user berdasarkan email
+	user, err := u.userRepo.FindByEmail(email)
+	if err != nil || user == nil {
+		return errors.New("email tidak terdaftar di sistem")
+	}
+
+	// 2. Verifikasi OTP dari Redis terlebih dahulu jika ada
+	var isValidOTP bool
+	if u.redisRepo != nil {
+		cachedOTP, err := u.redisRepo.GetCache("reset_code:" + email)
+		if err == nil && cachedOTP == otp {
+			isValidOTP = true
+		}
+	}
+
+	// Fallback ke database jika Redis tidak merespon/offline
+	if !isValidOTP {
+		if user.ResetToken != "" && user.ResetToken == otp {
+			if user.ResetTokenExpiresAt != nil && user.ResetTokenExpiresAt.After(time.Now()) {
+				isValidOTP = true
+			}
+		}
+	}
+
+	if !isValidOTP {
+		return errors.New("kode OTP tidak valid atau sudah kadaluwarsa")
+	}
+
+	// 3. Hash password baru
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("gagal mengamankan password baru")
+	}
+
+	user.Password = hashedPassword
+
+	// 4. Simpan perubahan ke database
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return errors.New("gagal memperbarui password")
+	}
+
+	// 5. Hapus OTP dari Redis & Database
+	if u.redisRepo != nil {
+		_ = u.redisRepo.DeleteCache("reset_code:" + email)
+	}
+	_ = u.userRepo.ClearResetToken(user.ID)
+
+	return nil
+}
+
+// AdminResetUserPassword mereset password pengguna secara langsung oleh Super Admin tanpa OTP.
+func (u *userUsecase) AdminResetUserPassword(input entity.AdminResetPasswordInput) error {
+	user, err := u.userRepo.FindByID(input.UserID)
+	if err != nil || user == nil {
+		return errors.New("pengguna target tidak ditemukan")
+	}
+
+	hashedPassword, err := utils.HashPassword(input.NewPassword)
+	if err != nil {
+		return errors.New("gagal mengamankan password baru")
+	}
+
+	user.Password = hashedPassword
+
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return errors.New("gagal memperbarui password pengguna")
+	}
+
+	if u.redisRepo != nil {
+		_ = u.redisRepo.DeleteRefreshToken(input.UserID)
+	}
+
+	return nil
 }
