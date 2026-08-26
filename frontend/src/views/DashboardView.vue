@@ -1470,6 +1470,9 @@
           <button @click="executePermanentDeleteUser" :disabled="isPermanentlyDeletingUser" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
             {{ isPermanentlyDeletingUser ? 'Menghapus...' : 'Ya, Hapus Permanen' }}
           </button>
+        </div>
+      </div>
+    </div>
     <!-- Modal Pop-up Detail Catatan Aktivitas (Audit Log Detail) -->
     <div v-if="isAuditDetailModalOpen && selectedAuditLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div class="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
