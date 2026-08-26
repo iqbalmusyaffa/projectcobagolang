@@ -30,9 +30,13 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	redisRepo := repository.NewRedisRepository(rdb)
 	auditRepo := repository.NewAuditLogRepository(db)
+	settingRepo := repository.NewSettingRepository(db)
 
 	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo, auditRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
+
+	settingUsecase := usecase.NewSettingUsecase(settingRepo, auditRepo)
+	settingHandler := handler.NewSettingHandler(settingUsecase, userUsecase)
 
 	// 3. Inisialisasi Router Gin & Global Middleware
 	r := gin.Default()
@@ -81,6 +85,7 @@ func main() {
 		protected.PUT("/change-password", userHandler.ChangePassword)
 		protected.GET("/dashboard/stats", userHandler.GetDashboardStats)
 		protected.GET("/audit-logs/my", userHandler.GetMyAuditLogs)
+		protected.GET("/settings", settingHandler.GetSettings)
 
 		// Rute Khusus Peran Superadmin & Owner
 		adminGroup := protected.Group("/admin")
@@ -89,6 +94,9 @@ func main() {
 			adminGroup.GET("/users", userHandler.GetAllUsers)
 			adminGroup.GET("/users/trashed", userHandler.GetTrashedUsers)
 			adminGroup.GET("/audit-logs", userHandler.GetAllAuditLogs)
+			adminGroup.PUT("/settings", settingHandler.UpdateSettings)
+			adminGroup.POST("/settings/test-email", settingHandler.TestEmail)
+			adminGroup.POST("/settings/logo", settingHandler.UploadLogo)
 		}
 
 		// Rute Khusus Peran Superadmin Sahaja

@@ -56,6 +56,18 @@
             </svg>
             <span>Catatan Aktivitas</span>
           </a>
+
+          <!-- Halaman Pengaturan Sistem (Khusus Superadmin & Owner) -->
+          <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'settings'" :class="[
+            'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
+            activeTab === 'settings' ? 'bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>Pengaturan Sistem</span>
+          </a>
         </nav>
       </div>
 
@@ -133,6 +145,18 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
             <span>Catatan Aktivitas</span>
+          </a>
+
+          <!-- Pengaturan Sistem Mobile (Khusus Superadmin & Owner) -->
+          <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'settings'; isMobileSidebarOpen = false" :class="[
+            'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
+            activeTab === 'settings' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>Pengaturan Sistem</span>
           </a>
         </nav>
 
@@ -1045,6 +1069,211 @@
             </div>
           </div>
         </template>
+
+        <!-- TAB 5: PENGATURAN SISTEM (KHUSUS SUPERADMIN & OWNER) -->
+        <template v-if="activeTab === 'settings' && canManageUsers">
+          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
+            <!-- Header Tab Pengaturan -->
+            <div class="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Pengaturan Sistem & Server SMTP</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Kelola informasi umum aplikasi dan konfigurasi pengiriman email (`/api/admin/settings`)</p>
+              </div>
+              <button
+                type="button"
+                @click="saveSystemSettings"
+                :disabled="isSavingSettings"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1.5 cursor-pointer self-start sm:self-auto shrink-0"
+              >
+                <svg :class="['w-4 h-4', isSavingSettings ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path v-if="!isSavingSettings" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan' }}</span>
+              </button>
+            </div>
+
+            <!-- Sub Navigation Bar: General vs SMTP -->
+            <div class="px-5 sm:px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2 bg-slate-50/50 dark:bg-slate-800/30">
+              <button
+                type="button"
+                @click="settingSubTab = 'general'"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer',
+                  settingSubTab === 'general' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ]"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>1. Pengaturan Umum</span>
+              </button>
+              <button
+                type="button"
+                @click="settingSubTab = 'smtp'"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer',
+                  settingSubTab === 'smtp' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ]"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <span>2. Server Email (SMTP)</span>
+              </button>
+            </div>
+
+            <!-- Form Sub-Tab 1: General Settings -->
+            <div v-if="settingSubTab === 'general'" class="p-6 space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Nama Aplikasi</label>
+                  <input
+                    v-model="systemSettings.app_name"
+                    type="text"
+                    placeholder="misal: TailAdmin Vue 3"
+                    class="w-full px-3.5 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Deskripsi Singkat Aplikasi</label>
+                  <input
+                    v-model="systemSettings.app_description"
+                    type="text"
+                    placeholder="misal: Dashboard REST API Golang Clean Architecture"
+                    class="w-full px-3.5 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Bahasa Bawaan (Default Language)</label>
+                  <select
+                    v-model="systemSettings.default_language"
+                    class="w-full px-3.5 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  >
+                    <option value="id">Bahasa Indonesia (id-ID)</option>
+                    <option value="en">English (en-US)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Zona Waktu Sistem (Timezone)</label>
+                  <select
+                    v-model="systemSettings.timezone"
+                    class="w-full px-3.5 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  >
+                    <option value="Asia/Jakarta">Asia/Jakarta (WIB - UTC+7)</option>
+                    <option value="Asia/Makassar">Asia/Makassar (WITA - UTC+8)</option>
+                    <option value="Asia/Jayapura">Asia/Jayapura (WIT - UTC+9)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Sub-Tab 2: SMTP Email Settings -->
+            <div v-if="settingSubTab === 'smtp'" class="p-6 space-y-6">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-900/60 gap-3">
+                <div>
+                  <h4 class="text-sm font-bold text-indigo-950 dark:text-indigo-200">Uji Coba Pengiriman Email SMTP</h4>
+                  <p class="text-xs text-indigo-700 dark:text-indigo-300 mt-0.5">Kirimkan email tes secara realtime untuk memverifikasi host & kredensial SMTP Anda.</p>
+                </div>
+                <button
+                  type="button"
+                  @click="openTestEmailModal"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1.5 cursor-pointer shrink-0"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                  </svg>
+                  <span>🚀 Tes Kirim Email SMTP</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Host Server SMTP</label>
+                  <input
+                    v-model="systemSettings.smtp_host"
+                    type="text"
+                    placeholder="misal: smtp.gmail.com atau smtp.sumopod.com"
+                    class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Port Server SMTP</label>
+                  <select
+                    v-model="systemSettings.smtp_port"
+                    class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  >
+                    <option value="587">587 (STARTTLS - Gmail, Outlook, Default)</option>
+                    <option value="465">465 (Implicit SSL/TLS - Sumopod, Custom SSL)</option>
+                    <option value="25">25 (Unencrypted Standard)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Email Pengirim (Sender Email)</label>
+                  <input
+                    v-model="systemSettings.smtp_sender_email"
+                    type="email"
+                    placeholder="misal: sender@example.com"
+                    class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Username Autentikasi SMTP (Opsional)</label>
+                  <input
+                    v-model="systemSettings.smtp_user"
+                    type="text"
+                    placeholder="Kosongkan jika sama dengan Email Pengirim"
+                    class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Password Autentikasi / App Password SMTP</label>
+                  <div class="relative">
+                    <input
+                      v-model="systemSettings.smtp_sender_password"
+                      :type="showSMTPPassword ? 'text' : 'password'"
+                      placeholder="Masukkan Kata Sandi SMTP / App Password"
+                      class="w-full px-3.5 py-2.5 text-sm font-mono border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition pr-10"
+                    />
+                    <button
+                      type="button"
+                      @click="showSMTPPassword = !showSMTPPassword"
+                      class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                    >
+                      <svg v-if="showSMTPPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.956 8.956 0 013.122-.763c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18" />
+                      </svg>
+                      <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="md:col-span-2 flex items-center space-x-3 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <input
+                    id="enable_email"
+                    v-model="systemSettings.enable_email_notification"
+                    type="checkbox"
+                    class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 cursor-pointer"
+                  />
+                  <label for="enable_email" class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
+                    Aktifkan Notifikasi Email Otomatis (OTP Reset Password & Konfirmasi Keberhasilan Ganti Password)
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </main>
     </div>
 
@@ -1552,6 +1781,53 @@
             Tutup Rincian
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal Tes Kirim Email SMTP -->
+    <div v-if="isTestEmailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="p-1.5 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Uji Coba Pengiriman Email SMTP</h3>
+          </div>
+          <button @click="isTestEmailModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <form @submit.prevent="executeTestSMTPEmail" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Alamat Email Tujuan Uji Coba</label>
+            <input
+              v-model="targetTestEmail"
+              type="email"
+              required
+              placeholder="misal: email.anda@gmail.com"
+              class="w-full px-3.5 py-2.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition"
+            />
+          </div>
+
+          <div class="flex justify-end space-x-3 pt-2">
+            <button type="button" @click="isTestEmailModalOpen = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer">
+              Batal
+            </button>
+            <button type="submit" :disabled="isTestingSMTP" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer flex items-center space-x-1.5">
+              <svg :class="['w-4 h-4', isTestingSMTP ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="!isTestingSMTP" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{{ isTestingSMTP ? 'Mengirim...' : 'Kirim Email Tes Sekarang' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -2319,6 +2595,8 @@ watch(activeTab, (newTab) => {
     loadTrashedUsers()
   } else if (newTab === 'logs') {
     loadAuditLogs()
+  } else if (newTab === 'settings') {
+    loadSystemSettings()
   }
 })
 
@@ -2403,9 +2681,85 @@ const closeDropdownOnOutsideClick = () => {
   isNotificationOpen.value = false
 }
 
+const settingSubTab = ref('general')
+const showSMTPPassword = ref(false)
+const isSavingSettings = ref(false)
+const isTestingSMTP = ref(false)
+const isTestEmailModalOpen = ref(false)
+const targetTestEmail = ref('')
+
+const systemSettings = reactive({
+  app_name: 'TailAdmin Vue 3',
+  app_description: 'Dashboard REST API Golang Clean Architecture',
+  default_language: 'id',
+  timezone: 'Asia/Jakarta',
+  smtp_host: '',
+  smtp_port: '587',
+  smtp_sender_email: '',
+  smtp_sender_password: '',
+  smtp_user: '',
+  enable_email_notification: true
+})
+
+const loadSystemSettings = async () => {
+  try {
+    const res = await api.get('/settings')
+    if (res.data?.data) {
+      const data = res.data.data
+      systemSettings.app_name = data.app_name || 'TailAdmin Vue 3'
+      systemSettings.app_description = data.app_description || ''
+      systemSettings.default_language = data.default_language || 'id'
+      systemSettings.timezone = data.timezone || 'Asia/Jakarta'
+      systemSettings.smtp_host = data.smtp_host || ''
+      systemSettings.smtp_port = data.smtp_port || '587'
+      systemSettings.smtp_sender_email = data.smtp_sender_email || ''
+      systemSettings.smtp_sender_password = data.smtp_sender_password || ''
+      systemSettings.smtp_user = data.smtp_user || ''
+      systemSettings.enable_email_notification = data.enable_email_notification !== false
+    }
+  } catch (err) {
+    // Ignore error if unauthenticated
+  }
+}
+
+const saveSystemSettings = async () => {
+  isSavingSettings.value = true
+  try {
+    const res = await api.put('/admin/settings', systemSettings)
+    showAlert(res.data?.message || 'Pengaturan sistem berhasil diperbarui!', true)
+    await loadSystemSettings()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal menyimpan pengaturan sistem', false)
+  } finally {
+    isSavingSettings.value = false
+  }
+}
+
+const openTestEmailModal = () => {
+  targetTestEmail.value = user.email || ''
+  isTestEmailModalOpen.value = true
+}
+
+const executeTestSMTPEmail = async () => {
+  if (!targetTestEmail.value) return
+  isTestingSMTP.value = true
+  try {
+    const res = await api.post('/admin/settings/test-email', {
+      target_email: targetTestEmail.value
+    })
+    showAlert(res.data?.message || `Email uji coba SMTP berhasil terkirim ke '${targetTestEmail.value}'!`, true)
+    isTestEmailModalOpen.value = false
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal mengirim email tes SMTP', false)
+  } finally {
+    isTestingSMTP.value = false
+  }
+}
+
 onMounted(() => {
   loadUserProfile()
   loadDashboardStats()
+  loadSystemSettings()
   window.addEventListener('click', closeDropdownOnOutsideClick)
 })
 
