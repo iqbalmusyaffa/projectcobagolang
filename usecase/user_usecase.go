@@ -263,7 +263,15 @@ func (u *userUsecase) ChangePassword(userID uint, input entity.ChangePasswordInp
 	user.Password = newHashedPassword
 
 	// 3. Simpan perubahan password
-	return u.userRepo.Update(user)
+	err = u.userRepo.Update(user)
+	if err != nil {
+		return err
+	}
+
+	// 4. Kirim email konfirmasi bahwa password berhasil diubah (asynchronous goroutine)
+	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
+
+	return nil
 }
 
 // GetAllUsers mengambil seluruh daftar pengguna (Khusus Superadmin & Owner).
@@ -502,6 +510,9 @@ func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
 	}
 	_ = u.userRepo.ClearResetToken(user.ID)
 
+	// 6. Kirim email konfirmasi bahwa password berhasil direset (asynchronous goroutine)
+	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
+
 	return nil
 }
 
@@ -527,6 +538,9 @@ func (u *userUsecase) AdminResetUserPassword(input entity.AdminResetPasswordInpu
 	if u.redisRepo != nil {
 		_ = u.redisRepo.DeleteRefreshToken(input.UserID)
 	}
+
+	// Kirim email konfirmasi bahwa password berhasil direset oleh Superadmin
+	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
 
 	return nil
 }
