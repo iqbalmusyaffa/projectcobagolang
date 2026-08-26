@@ -32,6 +32,9 @@ type UserUsecase interface {
 	LogActivity(userID uint, userName, userRole, action, ip, userAgent string)
 	GetMyAuditLogs(userID uint) ([]entity.AuditLogResponse, error)
 	GetAllAuditLogs() ([]entity.AuditLogResponse, error)
+	GetTrashedUsers() ([]entity.UserResponse, error)
+	RestoreUser(targetUserID uint) error
+	PermanentDeleteUser(targetUserID uint) error
 }
 
 // userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository, RedisRepository, & AuditLogRepository.
@@ -596,4 +599,35 @@ func (u *userUsecase) GetAllAuditLogs() ([]entity.AuditLogResponse, error) {
 		res = append(res, entity.FormatAuditLog(l))
 	}
 	return res, nil
+}
+
+// GetTrashedUsers mengambil seluruh data pengguna yang di-soft delete (Khusus Superadmin & Owner).
+func (u *userUsecase) GetTrashedUsers() ([]entity.UserResponse, error) {
+	users, err := u.userRepo.FindTrashedUsers()
+	if err != nil {
+		return nil, errors.New("gagal mengambil data pengguna terhapus")
+	}
+	var res []entity.UserResponse
+	for _, user := range users {
+		res = append(res, entity.FormatUser(user))
+	}
+	return res, nil
+}
+
+// RestoreUser memulihkan pengguna yang terhapus secara soft delete.
+func (u *userUsecase) RestoreUser(targetUserID uint) error {
+	err := u.userRepo.RestoreUser(targetUserID)
+	if err != nil {
+		return errors.New("gagal memulihkan pengguna")
+	}
+	return nil
+}
+
+// PermanentDeleteUser menghapus pengguna secara permanen dari PostgreSQL.
+func (u *userUsecase) PermanentDeleteUser(targetUserID uint) error {
+	err := u.userRepo.PermanentDeleteUser(targetUserID)
+	if err != nil {
+		return errors.New("gagal menghapus pengguna secara permanen")
+	}
+	return nil
 }

@@ -87,6 +87,7 @@ func main() {
 		adminGroup.Use(middleware.RoleMiddleware("superadmin", "owner"))
 		{
 			adminGroup.GET("/users", userHandler.GetAllUsers)
+			adminGroup.GET("/users/trashed", userHandler.GetTrashedUsers)
 			adminGroup.GET("/audit-logs", userHandler.GetAllAuditLogs)
 		}
 
@@ -99,6 +100,8 @@ func main() {
 			superadminGroup.PUT("/users", userHandler.AdminUpdateUser)
 			superadminGroup.DELETE("/users/:id", userHandler.AdminDeleteUser)
 			superadminGroup.PUT("/users/reset-password", userHandler.AdminResetPassword)
+			superadminGroup.PUT("/users/:id/restore", userHandler.RestoreUser)
+			superadminGroup.DELETE("/users/:id/permanent", userHandler.PermanentDeleteUser)
 		}
 	}
 
