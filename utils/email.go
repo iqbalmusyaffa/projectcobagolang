@@ -165,8 +165,13 @@ func SendResetPasswordEmail(toEmail, otpCode string) error {
 		</html>
 	`, toEmail, otpCode, resetURL)
 
+	smtpUser := os.Getenv("SMTP_USER")
+	if smtpUser == "" {
+		smtpUser = senderEmail
+	}
+
 	msg := []byte(subject + mime + body)
-	auth := smtp.PlainAuth("", senderEmail, senderPassword, smtpHost)
+	auth := smtp.PlainAuth("", smtpUser, senderPassword, smtpHost)
 	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
 
 	var err error
