@@ -891,7 +891,10 @@
                     <td class="py-3.5 px-4 font-bold text-slate-500 dark:text-slate-400 text-xs">#{{ u.id }}</td>
                     <td class="py-3.5 px-4">
                       <div class="flex items-center space-x-3">
-                        <img :src="getAvatarUrl(u.avatar)" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                        <img v-if="u.avatar" :src="getAvatarUrl(u.avatar)" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                        <div v-else class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                          {{ (u.name || 'U').charAt(0).toUpperCase() }}
+                        </div>
                         <span class="font-semibold text-slate-800 dark:text-white line-through text-slate-400">{{ u.name }}</span>
                       </div>
                     </td>
@@ -1703,6 +1706,14 @@ const avatarUrl = computed(() => {
   }
   return null
 })
+
+const getAvatarUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+  return `http://localhost:8080/${path}`
+}
 
 const formattedUpdatedAt = computed(() => {
   if (!user.updated_at || user.updated_at.startsWith('0001-01-01')) {
