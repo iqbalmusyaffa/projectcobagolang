@@ -29,8 +29,9 @@ func main() {
 	// 2. Dependency Injection Wiring (Database/Redis -> Repository -> Usecase -> Handler)
 	userRepo := repository.NewUserRepository(db)
 	redisRepo := repository.NewRedisRepository(rdb)
+	auditRepo := repository.NewAuditLogRepository(db)
 
-	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo)
+	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo, auditRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
 
 	// 3. Inisialisasi Router Gin & Global Middleware
@@ -79,12 +80,14 @@ func main() {
 		protected.DELETE("/profile", userHandler.DeleteAccount)
 		protected.PUT("/change-password", userHandler.ChangePassword)
 		protected.GET("/dashboard/stats", userHandler.GetDashboardStats)
+		protected.GET("/audit-logs/my", userHandler.GetMyAuditLogs)
 
 		// Rute Khusus Peran Superadmin & Owner
 		adminGroup := protected.Group("/admin")
 		adminGroup.Use(middleware.RoleMiddleware("superadmin", "owner"))
 		{
 			adminGroup.GET("/users", userHandler.GetAllUsers)
+			adminGroup.GET("/audit-logs", userHandler.GetAllAuditLogs)
 		}
 
 		// Rute Khusus Peran Superadmin Sahaja

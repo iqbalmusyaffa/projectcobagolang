@@ -45,6 +45,17 @@
             </svg>
             <span>Profil Saya</span>
           </a>
+
+          <!-- Halaman Catatan Aktivitas (Audit Logs) -->
+          <a href="#" @click.prevent="activeTab = 'logs'" :class="[
+            'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
+            activeTab === 'logs' ? 'bg-amber-50 dark:bg-slate-800 text-amber-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Catatan Aktivitas</span>
+          </a>
         </nav>
       </div>
 
@@ -111,6 +122,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
             <span>Profil Saya</span>
+          </a>
+
+          <!-- Catatan Aktivitas Mobile -->
+          <a href="#" @click.prevent="activeTab = 'logs'; isMobileSidebarOpen = false" :class="[
+            'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
+            activeTab === 'logs' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Catatan Aktivitas</span>
           </a>
         </nav>
 
@@ -808,6 +830,90 @@
                           </svg>
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+
+        <!-- TAB 4: CATATAN AKTIVITAS (AUDIT LOGS) -->
+        <template v-if="activeTab === 'logs'">
+          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div class="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  {{ canManageUsers ? 'Seluruh Catatan Aktivitas Sistem (Audit Logs)' : 'Riwayat Aktivitas Saya' }}
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ canManageUsers ? 'Rekap audit log seluruh pengguna sistem (`GET /api/admin/audit-logs`)' : 'Riwayat login & aktivitas akun Anda (`GET /api/audit-logs/my`)' }}
+                </p>
+              </div>
+              <div class="flex items-center space-x-2.5 self-start sm:self-auto">
+                <input
+                  v-model="auditSearchQuery"
+                  type="text"
+                  placeholder="Cari aktivitas..."
+                  class="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white dark:placeholder-slate-500 transition"
+                />
+                <button
+                  type="button"
+                  @click.stop="loadAuditLogs"
+                  :disabled="isLoadingAuditLogs"
+                  class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 cursor-pointer shrink-0"
+                >
+                  <svg :class="['w-4 h-4', isLoadingAuditLogs ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>{{ isLoadingAuditLogs ? 'Memuat...' : 'Refresh Log' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabel Audit Logs -->
+            <div class="p-4 sm:p-6 overflow-x-auto">
+              <div v-if="filteredAuditLogs.length === 0" class="py-12 text-center text-slate-400 dark:text-slate-500">
+                <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <p class="text-sm font-medium">Belum ada catatan aktivitas yang ditemukan.</p>
+              </div>
+
+              <table v-else class="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
+                    <th class="py-3 px-4">ID</th>
+                    <th class="py-3 px-4">Pengguna</th>
+                    <th class="py-3 px-4">Aktivitas / Tindakan</th>
+                    <th class="py-3 px-4">IP Address</th>
+                    <th class="py-3 px-4">Browser / Device</th>
+                    <th class="py-3 px-4 text-right">Waktu</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  <tr v-for="log in filteredAuditLogs" :key="log.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <td class="py-3.5 px-4 font-bold text-slate-500 dark:text-slate-400 text-xs">#{{ log.id }}</td>
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center space-x-2">
+                        <span class="font-semibold text-slate-800 dark:text-white">{{ log.user_name }}</span>
+                        <span :class="roleBadgeClass(log.user_role)">{{ (log.user_role || 'user').toUpperCase() }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 font-medium text-slate-900 dark:text-slate-100">
+                      <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span>{{ log.action }}</span>
+                      </span>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">
+                      {{ log.ip_address || '127.0.0.1' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 max-w-[200px] truncate" :title="log.user_agent">
+                      {{ log.user_agent || 'Web Browser' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-right font-medium text-slate-500 dark:text-slate-400">
+                      {{ new Date(log.created_at).toLocaleString('id-ID') }}
                     </td>
                   </tr>
                 </tbody>
@@ -1836,6 +1942,34 @@ const renderCharts = () => {
   }
 }
 
+const auditLogs = ref([])
+const isLoadingAuditLogs = ref(false)
+const auditSearchQuery = ref('')
+
+const loadAuditLogs = async () => {
+  isLoadingAuditLogs.value = true
+  try {
+    const endpoint = canManageUsers.value ? '/admin/audit-logs' : '/audit-logs/my'
+    const res = await api.get(endpoint)
+    auditLogs.value = res.data.data || []
+  } catch (err) {
+    showAlert('Gagal mengambil catatan aktivitas', false)
+  } finally {
+    isLoadingAuditLogs.value = false
+  }
+}
+
+const filteredAuditLogs = computed(() => {
+  if (!auditSearchQuery.value) return auditLogs.value
+  const q = auditSearchQuery.value.toLowerCase()
+  return auditLogs.value.filter(l => 
+    (l.user_name && l.user_name.toLowerCase().includes(q)) ||
+    (l.action && l.action.toLowerCase().includes(q)) ||
+    (l.user_role && l.user_role.toLowerCase().includes(q)) ||
+    (l.ip_address && l.ip_address.toLowerCase().includes(q))
+  )
+})
+
 watch(isDarkMode, () => {
   renderCharts()
 })
@@ -1845,6 +1979,8 @@ watch(activeTab, (newTab) => {
     loadDashboardStats()
   } else if (newTab === 'users') {
     loadAllUsers()
+  } else if (newTab === 'logs') {
+    loadAuditLogs()
   }
 })
 
@@ -1856,6 +1992,7 @@ const handleSyncData = async () => {
     if (canManageUsers.value) {
       await loadAllUsers()
     }
+    await loadAuditLogs()
     showAlert('Data & statistik berhasil disinkronkan dari database PostgreSQL!', true)
   } catch (err) {
     showAlert('Gagal menyinkronkan data dari server', false)

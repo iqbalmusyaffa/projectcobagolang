@@ -39,8 +39,8 @@ func InitDB() *gorm.DB {
 
 	fmt.Println("Berhasil terhubung ke database PostgreSQL!")
 
-	// Auto-Migrate tabel 'users' otomatis berdasarkan struct entity.User
-	err = db.AutoMigrate(&entity.User{})
+	// Auto-Migrate tabel 'users' & 'audit_logs' otomatis
+	err = db.AutoMigrate(&entity.User{}, &entity.AuditLog{})
 	if err != nil {
 		log.Fatalf("Gagal melakukan migrasi database: %v", err)
 	}

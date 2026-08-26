@@ -10,6 +10,7 @@ import (
 
 	"projectgolangnyoba/entity"
 	"projectgolangnyoba/usecase"
+	"projectgolangnyoba/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -78,6 +79,15 @@ func (h *UserHandler) Login(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	}
+
+	// Log activity
+	claims, _ := utils.ValidateToken(tokenPair.AccessToken)
+	if claims != nil {
+		user, err := h.userUsecase.GetProfile(claims.UserID)
+		if err == nil {
+			go h.userUsecase.LogActivity(user.ID, user.Name, user.Role, "Berhasil Login ke sistem", c.ClientIP(), c.Request.UserAgent())
+		}
 	}
 
 	// 3. Kembalikan respons sukses 200 OK dengan Access Token & Refresh Token
@@ -573,6 +583,60 @@ func (h *UserHandler) GetDashboardStats(c *gin.Context) {
 		"status":  "success",
 		"message": "Statistik dashboard berhasil diambil",
 		"data":    stats,
+	})
+}
+
+// GetMyAuditLogs handler untuk GET /api/audit-logs/my (Protected - Riwayat Pengguna Sendiri)
+func (h *UserHandler) GetMyAuditLogs(c *gin.Context) {
+	userID, exists := c.Get("currentUser")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+
+	uid, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "ID Pengguna tidak valid",
+		})
+		return
+	}
+
+	logs, err := h.userUsecase.GetMyAuditLogs(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Riwayat aktivitas pengguna berhasil diambil",
+		"data":    logs,
+	})
+}
+
+// GetAllAuditLogs handler untuk GET /api/admin/audit-logs (Khusus Superadmin & Owner)
+func (h *UserHandler) GetAllAuditLogs(c *gin.Context) {
+	logs, err := h.userUsecase.GetAllAuditLogs()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Seluruh catatan aktivitas sistem berhasil diambil",
+		"data":    logs,
 	})
 }
 

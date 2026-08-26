@@ -29,19 +29,24 @@ type UserUsecase interface {
 	RequestPasswordReset(email string) error
 	ResetPassword(email, otp, newPassword string) error
 	AdminResetUserPassword(input entity.AdminResetPasswordInput) error
+	LogActivity(userID uint, userName, userRole, action, ip, userAgent string)
+	GetMyAuditLogs(userID uint) ([]entity.AuditLogResponse, error)
+	GetAllAuditLogs() ([]entity.AuditLogResponse, error)
 }
 
-// userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository & RedisRepository.
+// userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository, RedisRepository, & AuditLogRepository.
 type userUsecase struct {
 	userRepo  repository.UserRepository
 	redisRepo repository.RedisRepository
+	auditRepo repository.AuditLogRepository
 }
 
 // NewUserUsecase adalah konstruktor untuk membuat instance UserUsecase.
-func NewUserUsecase(userRepo repository.UserRepository, redisRepo repository.RedisRepository) UserUsecase {
+func NewUserUsecase(userRepo repository.UserRepository, redisRepo repository.RedisRepository, auditRepo repository.AuditLogRepository) UserUsecase {
 	return &userUsecase{
 		userRepo:  userRepo,
 		redisRepo: redisRepo,
+		auditRepo: auditRepo,
 	}
 }
 
@@ -543,4 +548,52 @@ func (u *userUsecase) AdminResetUserPassword(input entity.AdminResetPasswordInpu
 	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
 
 	return nil
+}
+
+// LogActivity mencatat aktivitas pengguna secara mandiri ke tabel AuditLog.
+func (u *userUsecase) LogActivity(userID uint, userName, userRole, action, ip, userAgent string) {
+	if u.auditRepo == nil {
+		return
+	}
+	log := entity.AuditLog{
+		UserID:    userID,
+		UserName:  userName,
+		UserRole:  userRole,
+		Action:    action,
+		IPAddress: ip,
+		UserAgent: userAgent,
+	}
+	_ = u.auditRepo.Create(&log)
+}
+
+// GetMyAuditLogs mengambil riwayat aktivitas milik akun yang sedang login.
+func (u *userUsecase) GetMyAuditLogs(userID uint) ([]entity.AuditLogResponse, error) {
+	if u.auditRepo == nil {
+		return []entity.AuditLogResponse{}, nil
+	}
+	logs, err := u.auditRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, errors.New("gagal mengambil catatan aktivitas")
+	}
+	var res []entity.AuditLogResponse
+	for _, l := range logs {
+		res = append(res, entity.FormatAuditLog(l))
+	}
+	return res, nil
+}
+
+// GetAllAuditLogs mengambil seluruh catatan aktivitas sistem (Khusus Superadmin & Owner).
+func (u *userUsecase) GetAllAuditLogs() ([]entity.AuditLogResponse, error) {
+	if u.auditRepo == nil {
+		return []entity.AuditLogResponse{}, nil
+	}
+	logs, err := u.auditRepo.FindAll()
+	if err != nil {
+		return nil, errors.New("gagal mengambil seluruh catatan aktivitas")
+	}
+	var res []entity.AuditLogResponse
+	for _, l := range logs {
+		res = append(res, entity.FormatAuditLog(l))
+	}
+	return res, nil
 }
