@@ -46,8 +46,8 @@
             <span>Profil Saya</span>
           </a>
 
-          <!-- Halaman Catatan Aktivitas (Audit Logs) -->
-          <a href="#" @click.prevent="activeTab = 'logs'" :class="[
+          <!-- Halaman Catatan Aktivitas (Khusus Superadmin & Owner) -->
+          <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'logs'" :class="[
             'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
             activeTab === 'logs' ? 'bg-amber-50 dark:bg-slate-800 text-amber-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
           ]">
@@ -124,8 +124,8 @@
             <span>Profil Saya</span>
           </a>
 
-          <!-- Catatan Aktivitas Mobile -->
-          <a href="#" @click.prevent="activeTab = 'logs'; isMobileSidebarOpen = false" :class="[
+          <!-- Catatan Aktivitas Mobile (Khusus Superadmin & Owner) -->
+          <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'logs'; isMobileSidebarOpen = false" :class="[
             'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
             activeTab === 'logs' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
           ]">
