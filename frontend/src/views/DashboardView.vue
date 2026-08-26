@@ -863,6 +863,7 @@
                     </td>
                   </tr>
                 </tbody>
+              </table>
             </div>
 
             <!-- Tampilan Tabel Tempat Sampah (Trashed Users) -->
