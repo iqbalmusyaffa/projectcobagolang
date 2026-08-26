@@ -747,8 +747,38 @@
               </div>
             </div>
 
-            <!-- Tabel dengan Touch Scroll di Mobile -->
-            <div class="p-4 sm:p-6 overflow-x-auto">
+            <!-- Sub Navigation Bar: Active Users vs Recycle Bin (Trashed Users) -->
+            <div class="px-5 sm:px-6 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 flex items-center space-x-2 bg-slate-50/50 dark:bg-slate-800/30">
+              <button
+                type="button"
+                @click="userSubTab = 'active'"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer',
+                  userSubTab === 'active' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ]"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span>Pengguna Aktif ({{ allUsers.length }})</span>
+              </button>
+              <button
+                type="button"
+                @click="userSubTab = 'trashed'; loadTrashedUsers()"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 cursor-pointer',
+                  userSubTab === 'trashed' ? 'bg-rose-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ]"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <span>Tempat Sampah ({{ trashedUsers.length }})</span>
+              </button>
+            </div>
+
+            <!-- Tabel Pengguna Aktif -->
+            <div v-if="userSubTab === 'active'" class="p-4 sm:p-6 overflow-x-auto">
               <table class="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
@@ -828,6 +858,75 @@
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                           </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+            </div>
+
+            <!-- Tampilan Tabel Tempat Sampah (Trashed Users) -->
+            <div v-if="userSubTab === 'trashed'" class="p-4 sm:p-6 overflow-x-auto">
+              <div v-if="trashedUsers.length === 0" class="py-12 text-center text-slate-400 dark:text-slate-500">
+                <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <p class="text-sm font-medium">Tempat sampah kosong. Tidak ada pengguna yang terhapus.</p>
+              </div>
+
+              <table v-else class="w-full text-left border-collapse min-w-[650px]">
+                <thead>
+                  <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider">
+                    <th class="py-3 px-4">ID</th>
+                    <th class="py-3 px-4">Pengguna</th>
+                    <th class="py-3 px-4">Email</th>
+                    <th class="py-3 px-4">Peran (Role)</th>
+                    <th class="py-3 px-4">Tanggal Dihapus</th>
+                    <th v-if="isSuperadmin" class="py-3 px-4 text-center">Aksi Pemulihan</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  <tr v-for="u in trashedUsers" :key="u.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <td class="py-3.5 px-4 font-bold text-slate-500 dark:text-slate-400 text-xs">#{{ u.id }}</td>
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center space-x-3">
+                        <img :src="getAvatarUrl(u.avatar)" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
+                        <span class="font-semibold text-slate-800 dark:text-white line-through text-slate-400">{{ u.name }}</span>
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-mono text-xs">{{ u.email }}</td>
+                    <td class="py-3.5 px-4">
+                      <span :class="roleBadgeClass(u.role)">{{ (u.role || 'user').toUpperCase() }}</span>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-rose-500 dark:text-rose-400 font-medium">
+                      {{ new Date(u.updated_at).toLocaleString('id-ID') }}
+                    </td>
+                    <td v-if="isSuperadmin" class="py-3.5 px-4 text-center">
+                      <div class="flex items-center justify-center space-x-2">
+                        <!-- Tombol Restore -->
+                        <button
+                          type="button"
+                          @click="openRestoreModal(u)"
+                          class="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg transition text-xs font-semibold flex items-center space-x-1 cursor-pointer"
+                          title="Pulihkan Pengguna Ini ke Status Aktif"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>Pulihkan</span>
+                        </button>
+
+                        <!-- Tombol Hapus Permanen -->
+                        <button
+                          type="button"
+                          @click="openPermanentDeleteModal(u)"
+                          class="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition text-xs font-semibold flex items-center space-x-1 cursor-pointer"
+                          title="Hapus Permanen dari Database PostgreSQL"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                          <span>Hapus Permanen</span>
                         </button>
                       </div>
                     </td>
@@ -1299,6 +1398,56 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Pulihkan User (Restore) -->
+    <div v-if="isRestoreModalOpen && selectedTrashedUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400 mb-4">
+          <div class="p-2 bg-emerald-100 dark:bg-emerald-950/60 rounded-full shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Pulihkan Pengguna?</h3>
+        </div>
+        <p class="text-sm text-slate-600 dark:text-slate-300 mb-6">
+          Apakah Anda yakin ingin memulihkan akun <strong class="text-slate-900 dark:text-white">{{ selectedTrashedUser.name }}</strong> (<code class="text-xs">{{ selectedTrashedUser.email }}</code>)? Akun ini akan kembali aktif di sistem.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button @click="isRestoreModalOpen = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer">
+            Batal
+          </button>
+          <button @click="executeRestoreUser" :disabled="isRestoringUser" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
+            {{ isRestoringUser ? 'Memulihkan...' : 'Ya, Pulihkan Akun' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Permanen User -->
+    <div v-if="isPermanentDeleteModalOpen && selectedTrashedUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center space-x-3 text-rose-600 dark:text-rose-400 mb-4">
+          <div class="p-2 bg-rose-100 dark:bg-rose-950/60 rounded-full shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Hapus Permanen Pengguna?</h3>
+        </div>
+        <div class="p-3 bg-rose-50 dark:bg-rose-950/40 border-l-4 border-rose-500 rounded text-xs text-rose-800 dark:text-rose-300 mb-4 font-semibold">
+          ⚠️ Tindakan ini TIDAK DAPAT DIBATALKAN! Data akun {{ selectedTrashedUser.name }} akan dihapus selamanya dari PostgreSQL.
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button @click="isPermanentDeleteModalOpen = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer">
+            Batal
+          </button>
+          <button @click="executePermanentDeleteUser" :disabled="isPermanentlyDeletingUser" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
+            {{ isPermanentlyDeletingUser ? 'Menghapus...' : 'Ya, Hapus Permanen' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1331,6 +1480,72 @@ const avatarModalName = ref('')
 const avatarModalUrl = ref('')
 const selectedFile = ref(null)
 const allUsers = ref([])
+
+const userSubTab = ref('active')
+const trashedUsers = ref([])
+const isLoadingTrashedUsers = ref(false)
+const isRestoreModalOpen = ref(false)
+const isRestoringUser = ref(false)
+const isPermanentDeleteModalOpen = ref(false)
+const isPermanentlyDeletingUser = ref(false)
+const selectedTrashedUser = ref(null)
+
+const loadTrashedUsers = async () => {
+  if (!canManageUsers.value) return
+  isLoadingTrashedUsers.value = true
+  try {
+    const res = await api.get('/admin/users/trashed')
+    trashedUsers.value = res.data.data || []
+  } catch (err) {
+    showAlert('Gagal mengambil data pengguna terhapus', false)
+  } finally {
+    isLoadingTrashedUsers.value = false
+  }
+}
+
+const openRestoreModal = (u) => {
+  selectedTrashedUser.value = u
+  isRestoreModalOpen.value = true
+}
+
+const executeRestoreUser = async () => {
+  if (!selectedTrashedUser.value) return
+  isRestoringUser.value = true
+  try {
+    await api.put(`/superadmin/users/${selectedTrashedUser.value.id}/restore`)
+    showAlert(`Pengguna #${selectedTrashedUser.value.id} (${selectedTrashedUser.value.name}) berhasil dipulihkan!`, true)
+    isRestoreModalOpen.value = false
+    selectedTrashedUser.value = null
+    await loadTrashedUsers()
+    await loadAllUsers()
+    await loadDashboardStats()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal memulihkan pengguna', false)
+  } finally {
+    isRestoringUser.value = false
+  }
+}
+
+const openPermanentDeleteModal = (u) => {
+  selectedTrashedUser.value = u
+  isPermanentDeleteModalOpen.value = true
+}
+
+const executePermanentDeleteUser = async () => {
+  if (!selectedTrashedUser.value) return
+  isPermanentlyDeletingUser.value = true
+  try {
+    await api.delete(`/superadmin/users/${selectedTrashedUser.value.id}/permanent`)
+    showAlert(`Pengguna #${selectedTrashedUser.value.id} (${selectedTrashedUser.value.name}) dihapus secara permanen!`, true)
+    isPermanentDeleteModalOpen.value = false
+    selectedTrashedUser.value = null
+    await loadTrashedUsers()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal menghapus pengguna secara permanen', false)
+  } finally {
+    isPermanentlyDeletingUser.value = false
+  }
+}
 
 const stats = reactive({
   total_users: 0,
@@ -1813,7 +2028,8 @@ const handleAdminDeleteUser = async () => {
     await api.delete(`/superadmin/users/${adminDeleteTarget.id}`)
     showAlert(`Pengguna '${adminDeleteTarget.name}' berhasil dihapus (Soft Delete)!`, true)
     isAdminDeleteModalOpen.value = false
-    loadAllUsers()
+    await loadAllUsers()
+    await loadTrashedUsers()
   } catch (err) {
     showAlert(err.response?.data?.message || 'Gagal menghapus pengguna', false)
   } finally {
@@ -1979,6 +2195,7 @@ watch(activeTab, (newTab) => {
     loadDashboardStats()
   } else if (newTab === 'users') {
     loadAllUsers()
+    loadTrashedUsers()
   } else if (newTab === 'logs') {
     loadAuditLogs()
   }
@@ -1991,6 +2208,7 @@ const handleSyncData = async () => {
     await loadDashboardStats()
     if (canManageUsers.value) {
       await loadAllUsers()
+      await loadTrashedUsers()
     }
     await loadAuditLogs()
     showAlert('Data & statistik berhasil disinkronkan dari database PostgreSQL!', true)

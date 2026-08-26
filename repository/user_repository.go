@@ -19,6 +19,9 @@ type UserRepository interface {
 	GetDashboardStats() (entity.DashboardStats, error)
 	SaveResetToken(email, token string, expiresAt time.Time) error
 	ClearResetToken(userID uint) error
+	FindTrashedUsers() ([]entity.User, error)
+	RestoreUser(userID uint) error
+	PermanentDeleteUser(userID uint) error
 }
 
 // userRepository implementasi konkret dari UserRepository yang menggunakan GORM.
@@ -98,4 +101,21 @@ func (r *userRepository) GetDashboardStats() (entity.DashboardStats, error) {
 	r.db.Model(&entity.User{}).Where("role = ?", "admin").Count(&stats.TotalAdmin)
 	r.db.Model(&entity.User{}).Where("role = ?", "user").Count(&stats.TotalUserRole)
 	return stats, nil
+}
+
+// FindTrashedUsers mengambil seluruh data pengguna yang telah di-soft delete (deleted_at IS NOT NULL).
+func (r *userRepository) FindTrashedUsers() ([]entity.User, error) {
+	var users []entity.User
+	err := r.db.Unscoped().Where("deleted_at IS NOT NULL").Order("deleted_at desc").Find(&users).Error
+	return users, err
+}
+
+// RestoreUser memulihkan pengguna terhapus dengan mengeset deleted_at menjadi NULL.
+func (r *userRepository) RestoreUser(userID uint) error {
+	return r.db.Unscoped().Model(&entity.User{}).Where("id = ?", userID).Update("deleted_at", nil).Error
+}
+
+// PermanentDeleteUser menghapus pengguna secara permanen (Hard Delete) dari PostgreSQL.
+func (r *userRepository) PermanentDeleteUser(userID uint) error {
+	return r.db.Unscoped().Delete(&entity.User{}, userID).Error
 }

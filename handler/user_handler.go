@@ -640,6 +640,92 @@ func (h *UserHandler) GetAllAuditLogs(c *gin.Context) {
 	})
 }
 
+// GetTrashedUsers handler untuk GET /api/admin/users/trashed (Khusus Superadmin & Owner)
+func (h *UserHandler) GetTrashedUsers(c *gin.Context) {
+	users, err := h.userUsecase.GetTrashedUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Daftar pengguna terhapus berhasil diambil",
+		"data":    users,
+	})
+}
+
+// RestoreUser handler untuk PUT /api/superadmin/users/:id/restore (Khusus Superadmin)
+func (h *UserHandler) RestoreUser(c *gin.Context) {
+	idParam := c.Param("id")
+	targetID, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ID Pengguna tidak valid",
+		})
+		return
+	}
+
+	err = h.userUsecase.RestoreUser(uint(targetID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Log activity
+	adminID, _ := c.Get("currentUser")
+	if aid, ok := adminID.(uint); ok {
+		admin, _ := h.userUsecase.GetProfile(aid)
+		go h.userUsecase.LogActivity(aid, admin.Name, admin.Role, fmt.Sprintf("Memulihkan pengguna: #%d", targetID), c.ClientIP(), c.Request.UserAgent())
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Pengguna berhasil dipulihkan dari tempat sampah",
+	})
+}
+
+// PermanentDeleteUser handler untuk DELETE /api/superadmin/users/:id/permanent (Khusus Superadmin)
+func (h *UserHandler) PermanentDeleteUser(c *gin.Context) {
+	idParam := c.Param("id")
+	targetID, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ID Pengguna tidak valid",
+		})
+		return
+	}
+
+	err = h.userUsecase.PermanentDeleteUser(uint(targetID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Log activity
+	adminID, _ := c.Get("currentUser")
+	if aid, ok := adminID.(uint); ok {
+		admin, _ := h.userUsecase.GetProfile(aid)
+		go h.userUsecase.LogActivity(aid, admin.Name, admin.Role, fmt.Sprintf("Menghapus permanen pengguna: #%d", targetID), c.ClientIP(), c.Request.UserAgent())
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Pengguna berhasil dihapus secara permanen dari database",
+	})
+}
+
 // ShowAPIStatus merender halaman status REST API Golang
 
 
