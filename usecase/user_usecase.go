@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -9,13 +11,21 @@ import (
 	"projectgolangnyoba/utils"
 )
 
-// UserUsecase mendefinisikan kontrak logika bisnis terkait User.
+// hashToken membuat hash SHA-256 untuk memetakan refresh token ke sesi database.
+func hashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(h[:])
+}
+
+// UserUsecase mendefinisikan kontrak logika bisnis terkait User, Aktivasi Akun, & Sesi Aktif.
 type UserUsecase interface {
 	Register(input entity.RegisterInput) (entity.UserResponse, error)
+	VerifyEmail(input entity.VerifyEmailInput) error
+	ResendVerification(input entity.ResendVerificationInput) error
 	AdminCreateUser(input entity.AdminCreateUserInput) (entity.UserResponse, error)
 	AdminUpdateUser(input entity.AdminUpdateUserInput) (entity.UserResponse, error)
 	AdminDeleteUser(targetUserID uint) error
-	Login(input entity.LoginInput) (entity.TokenPairResponse, error)
+	Login(input entity.LoginInput, ipAddress, userAgent string) (entity.TokenPairResponse, error)
 	RefreshToken(refreshTokenStr string) (string, error)
 	GetProfile(userID uint) (entity.UserResponse, error)
 	UpdateProfile(userID uint, input entity.UpdateProfileInput) (entity.UserResponse, error)
@@ -35,25 +45,35 @@ type UserUsecase interface {
 	GetTrashedUsers() ([]entity.UserResponse, error)
 	RestoreUser(targetUserID uint) error
 	PermanentDeleteUser(targetUserID uint) error
+	GetActiveSessions(userID uint, currentRefreshToken string) ([]entity.UserSessionResponse, error)
+	RevokeSession(userID, sessionID uint) error
+	RevokeOtherSessions(userID uint, currentRefreshToken string) error
 }
 
-// userUsecase implementasi dari UserUsecase yang bergantung pada UserRepository, RedisRepository, & AuditLogRepository.
+// userUsecase implementasi dari UserUsecase yang bergantung pada Repository User, Redis, AuditLog, & Session.
 type userUsecase struct {
-	userRepo  repository.UserRepository
-	redisRepo repository.RedisRepository
-	auditRepo repository.AuditLogRepository
+	userRepo    repository.UserRepository
+	redisRepo   repository.RedisRepository
+	auditRepo   repository.AuditLogRepository
+	sessionRepo repository.SessionRepository
 }
 
 // NewUserUsecase adalah konstruktor untuk membuat instance UserUsecase.
-func NewUserUsecase(userRepo repository.UserRepository, redisRepo repository.RedisRepository, auditRepo repository.AuditLogRepository) UserUsecase {
+func NewUserUsecase(
+	userRepo repository.UserRepository,
+	redisRepo repository.RedisRepository,
+	auditRepo repository.AuditLogRepository,
+	sessionRepo repository.SessionRepository,
+) UserUsecase {
 	return &userUsecase{
-		userRepo:  userRepo,
-		redisRepo: redisRepo,
-		auditRepo: auditRepo,
+		userRepo:    userRepo,
+		redisRepo:   redisRepo,
+		auditRepo:   auditRepo,
+		sessionRepo: sessionRepo,
 	}
 }
 
-// Register memproses pendaftaran akun pengguna baru.
+// Register memproses pendaftaran akun pengguna baru dengan status belum diverifikasi dan mengirim OTP aktivasi.
 func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse, error) {
 	// 1. Cek apakah email sudah terdaftar
 	existingUser, _ := u.userRepo.FindByEmail(input.Email)
@@ -67,53 +87,147 @@ func (u *userUsecase) Register(input entity.RegisterInput) (entity.UserResponse,
 		return entity.UserResponse{}, errors.New("gagal mengamankan password")
 	}
 
-	// 3. Registrasi publik SELALU dipaksa menjadi role 'admin' demi keamanan
-	user := entity.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: hashedPassword,
-		Role:     "admin",
+	// 3. Generate kode OTP 6-digit untuk verifikasi akun
+	otpCode, err := utils.GenerateOTP()
+	if err != nil {
+		otpCode = "123456"
+	}
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	role := input.Role
+	if role == "" {
+		role = "user"
 	}
 
-	// 5. Simpan ke database melalui repository
+	user := entity.User{
+		Name:                       input.Name,
+		Email:                      input.Email,
+		Password:                   hashedPassword,
+		Role:                       role,
+		IsEmailVerified:            false,
+		VerificationToken:          otpCode,
+		VerificationTokenExpiresAt: &expiresAt,
+	}
+
+	// 4. Simpan ke database melalui repository
 	err = u.userRepo.Create(&user)
 	if err != nil {
 		return entity.UserResponse{}, err
 	}
 
-	// 6. Kembalikan data user dalam format UserResponse (tanpa password)
+	// 5. Simpan OTP ke Redis (TTL 15 Menit)
+	if u.redisRepo != nil {
+		_ = u.redisRepo.SetCache("verify_code:"+user.Email, otpCode, 15*time.Minute)
+	}
+
+	// 6. Kirim email aktivasi secara asynchronous
+	go utils.SendVerificationEmail(user.Email, otpCode)
+
 	return entity.FormatUser(user), nil
 }
 
-// AdminCreateUser memproses pendaftaran pengguna baru khusus oleh Super Admin dengan menentukan role.
+// VerifyEmail memverifikasi akun pengguna menggunakan kode OTP 6-digit.
+func (u *userUsecase) VerifyEmail(input entity.VerifyEmailInput) error {
+	user, err := u.userRepo.FindByEmail(input.Email)
+	if err != nil || user == nil {
+		return errors.New("email tidak terdaftar di sistem")
+	}
+
+	if user.IsEmailVerified {
+		return errors.New("email sudah diverifikasi sebelumnya, silakan langsung login")
+	}
+
+	var isValidOTP bool
+	// 1. Cek dari Redis Cache terlebih dahulu
+	if u.redisRepo != nil {
+		cachedOTP, err := u.redisRepo.GetCache("verify_code:" + input.Email)
+		if err == nil && cachedOTP == input.OTP {
+			isValidOTP = true
+		}
+	}
+
+	// 2. Fallback cek ke PostgreSQL jika Redis tidak ada
+	if !isValidOTP {
+		if user.VerificationToken != "" && user.VerificationToken == input.OTP {
+			if user.VerificationTokenExpiresAt != nil && user.VerificationTokenExpiresAt.After(time.Now()) {
+				isValidOTP = true
+			}
+		}
+	}
+
+	if !isValidOTP {
+		return errors.New("kode OTP aktivasi tidak valid atau sudah kadaluwarsa (15 menit)")
+	}
+
+	// 3. Update status email verified di database
+	err = u.userRepo.MarkEmailVerified(user.ID)
+	if err != nil {
+		return errors.New("gagal memverifikasi akun")
+	}
+
+	// 4. Hapus OTP dari Redis
+	if u.redisRepo != nil {
+		_ = u.redisRepo.DeleteCache("verify_code:" + input.Email)
+	}
+
+	return nil
+}
+
+// ResendVerification membuat dan mengirimkan kembali kode OTP aktivasi baru via email.
+func (u *userUsecase) ResendVerification(input entity.ResendVerificationInput) error {
+	user, err := u.userRepo.FindByEmail(input.Email)
+	if err != nil || user == nil {
+		return errors.New("email tidak terdaftar di sistem")
+	}
+
+	if user.IsEmailVerified {
+		return errors.New("email sudah diverifikasi sebelumnya, silakan langsung login")
+	}
+
+	otpCode, err := utils.GenerateOTP()
+	if err != nil {
+		return errors.New("gagal membuat kode verifikasi baru")
+	}
+
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	if u.redisRepo != nil {
+		_ = u.redisRepo.SetCache("verify_code:"+user.Email, otpCode, 15*time.Minute)
+	}
+	_ = u.userRepo.SaveVerificationToken(user.Email, otpCode, expiresAt)
+
+	go utils.SendVerificationEmail(user.Email, otpCode)
+
+	return nil
+}
+
+// AdminCreateUser memproses pendaftaran pengguna baru khusus oleh Super Admin dengan menentukan role (langsung aktif/terverifikasi).
 func (u *userUsecase) AdminCreateUser(input entity.AdminCreateUserInput) (entity.UserResponse, error) {
-	// 1. Cek apakah email sudah terdaftar
 	existingUser, _ := u.userRepo.FindByEmail(input.Email)
 	if existingUser != nil {
 		return entity.UserResponse{}, errors.New("email sudah terdaftar, silakan gunakan email lain")
 	}
 
-	// 2. Hash password menggunakan bcrypt
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
 		return entity.UserResponse{}, errors.New("gagal mengamankan password")
 	}
 
-	// 3. Validasi role (superadmin, owner, admin, user; default: user)
 	role := input.Role
 	if role != "superadmin" && role != "owner" && role != "admin" && role != "user" {
 		role = "user"
 	}
 
-	// 4. Buat entity User baru
+	now := time.Now()
 	user := entity.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: hashedPassword,
-		Role:     role,
+		Name:            input.Name,
+		Email:           input.Email,
+		Password:        hashedPassword,
+		Role:            role,
+		IsEmailVerified: true,
+		EmailVerifiedAt: &now,
 	}
 
-	// 5. Simpan ke database melalui repository
 	err = u.userRepo.Create(&user)
 	if err != nil {
 		return entity.UserResponse{}, err
@@ -122,8 +236,8 @@ func (u *userUsecase) AdminCreateUser(input entity.AdminCreateUserInput) (entity
 	return entity.FormatUser(user), nil
 }
 
-// Login memverifikasi kredensial email & password dan menghasilkan Access Token (15m) & Refresh Token (7 Hari).
-func (u *userUsecase) Login(input entity.LoginInput) (entity.TokenPairResponse, error) {
+// Login memverifikasi kredensial email & password, memvalidasi status verifikasi email, serta mencatat sesi aktif.
+func (u *userUsecase) Login(input entity.LoginInput, ipAddress, userAgent string) (entity.TokenPairResponse, error) {
 	// 1. Cari user berdasarkan email
 	user, err := u.userRepo.FindByEmail(input.Email)
 	if err != nil {
@@ -135,12 +249,17 @@ func (u *userUsecase) Login(input entity.LoginInput) (entity.TokenPairResponse, 
 		return entity.TokenPairResponse{}, errors.New("email atau password salah")
 	}
 
-	role := user.Role
-	if role == "" {
-		role = "admin"
+	// 3. Validasi status verifikasi email
+	if !user.IsEmailVerified {
+		return entity.TokenPairResponse{}, errors.New("UNVERIFIED_EMAIL: Akun Anda belum diverifikasi. Silakan aktivasi melalui link/kode OTP yang telah dikirim ke email Anda.")
 	}
 
-	// 3. Generate Access Token (15 Menit) & Refresh Token (7 Hari)
+	role := user.Role
+	if role == "" {
+		role = "user"
+	}
+
+	// 4. Generate Access Token (15 Menit) & Refresh Token (7 Hari)
 	accessToken, err := utils.GenerateAccessToken(user.ID, user.Email, role)
 	if err != nil {
 		return entity.TokenPairResponse{}, errors.New("gagal membuat access token")
@@ -151,9 +270,29 @@ func (u *userUsecase) Login(input entity.LoginInput) (entity.TokenPairResponse, 
 		return entity.TokenPairResponse{}, errors.New("gagal membuat refresh token")
 	}
 
-	// 4. Simpan Refresh Token ke Redis dengan TTL 7 Hari (168 Jam)
+	// 5. Simpan Refresh Token ke Redis dengan TTL 7 Hari (168 Jam)
 	if u.redisRepo != nil {
 		_ = u.redisRepo.StoreRefreshToken(user.ID, refreshToken, 7*24*time.Hour)
+	}
+
+	// 6. Catat Sesi Perangkat Aktif di PostgreSQL
+	if u.sessionRepo != nil {
+		deviceName, browser, os, deviceType := utils.ParseUserAgent(userAgent)
+		refreshHash := hashToken(refreshToken)
+
+		session := entity.UserSession{
+			UserID:           user.ID,
+			RefreshTokenHash: refreshHash,
+			IPAddress:        ipAddress,
+			UserAgent:        userAgent,
+			DeviceName:       deviceName,
+			DeviceType:       deviceType,
+			Browser:          browser,
+			OS:               os,
+			LastActiveAt:     time.Now(),
+			ExpiresAt:        time.Now().Add(7 * 24 * time.Hour),
+		}
+		_ = u.sessionRepo.Create(&session)
 	}
 
 	return entity.TokenPairResponse{
@@ -162,7 +301,7 @@ func (u *userUsecase) Login(input entity.LoginInput) (entity.TokenPairResponse, 
 	}, nil
 }
 
-// RefreshToken memvalidasi Refresh Token dan mengembalikan Access Token 15 menit baru.
+// RefreshToken memvalidasi Refresh Token, memperbarui keaktifan sesi, dan mengembalikan Access Token baru.
 func (u *userUsecase) RefreshToken(refreshTokenStr string) (string, error) {
 	// 1. Validasi signature & struktur Refresh Token
 	claims, err := utils.ValidateToken(refreshTokenStr)
@@ -190,13 +329,22 @@ func (u *userUsecase) RefreshToken(refreshTokenStr string) (string, error) {
 
 	role := user.Role
 	if role == "" {
-		role = "admin"
+		role = "user"
 	}
 
 	// 4. Terbitkan Access Token 15 Menit yang baru
 	newAccessToken, err := utils.GenerateAccessToken(user.ID, user.Email, role)
 	if err != nil {
 		return "", errors.New("gagal membuat access token baru")
+	}
+
+	// 5. Perbarui last_active_at pada data sesi aktif
+	if u.sessionRepo != nil {
+		hash := hashToken(refreshTokenStr)
+		sess, err := u.sessionRepo.FindByRefreshTokenHash(hash)
+		if err == nil && sess != nil {
+			_ = u.sessionRepo.UpdateLastActive(sess.ID)
+		}
 	}
 
 	return newAccessToken, nil
@@ -299,9 +447,8 @@ func (u *userUsecase) GetAllUsers() ([]entity.UserResponse, error) {
 
 // ChangeUserRole mengubah peran (role) pengguna lain (Khusus Superadmin).
 func (u *userUsecase) ChangeUserRole(input entity.ChangeRoleInput) (entity.UserResponse, error) {
-	// Validasi role target
-	if input.Role != "superadmin" && input.Role != "owner" && input.Role != "admin" {
-		return entity.UserResponse{}, errors.New("role tidak valid (pilih: superadmin, owner, atau admin)")
+	if input.Role != "superadmin" && input.Role != "owner" && input.Role != "admin" && input.Role != "user" {
+		return entity.UserResponse{}, errors.New("role tidak valid (pilih: superadmin, owner, admin, atau user)")
 	}
 
 	user, err := u.userRepo.FindByID(input.UserID)
@@ -319,16 +466,18 @@ func (u *userUsecase) ChangeUserRole(input entity.ChangeRoleInput) (entity.UserR
 	return entity.FormatUser(*user), nil
 }
 
-// LogoutToken memasukkan token JWT ke Redis Blacklist & menghapus Refresh Token (Instant Logout).
+// LogoutToken memasukkan token JWT ke Redis Blacklist, menghapus Refresh Token & menghapus sesi aktif.
 func (u *userUsecase) LogoutToken(token string) error {
-	if u.redisRepo != nil && token != "" {
+	if token != "" {
 		claims, err := utils.ValidateToken(token)
 		if err == nil && claims.UserID != 0 {
-			// Hapus Refresh Token dari Redis
-			_ = u.redisRepo.DeleteRefreshToken(claims.UserID)
+			if u.redisRepo != nil {
+				_ = u.redisRepo.DeleteRefreshToken(claims.UserID)
+			}
 		}
-		// Simpan Access Token ke Redis Blacklist dengan TTL 24 jam
-		return u.redisRepo.BlacklistToken(token, 24*time.Hour)
+		if u.redisRepo != nil {
+			return u.redisRepo.BlacklistToken(token, 24*time.Hour)
+		}
 	}
 	return nil
 }
@@ -349,7 +498,7 @@ func (u *userUsecase) UploadAvatar(userID uint, avatarPath string) (entity.UserR
 	return entity.FormatUser(*user), nil
 }
 
-// DeleteAccount menghapus akun secara Soft Delete dan meng-invalidasi token di Redis.
+// DeleteAccount menghapus akun secara Soft Delete, meng-invalidasi token, dan menghapus seluruh sesi.
 func (u *userUsecase) DeleteAccount(userID uint, token string) error {
 	user, err := u.userRepo.FindByID(userID)
 	if err != nil {
@@ -359,6 +508,10 @@ func (u *userUsecase) DeleteAccount(userID uint, token string) error {
 	err = u.userRepo.Delete(user.ID)
 	if err != nil {
 		return errors.New("gagal menghapus akun")
+	}
+
+	if u.sessionRepo != nil {
+		_ = u.sessionRepo.DeleteByUserID(userID)
 	}
 
 	if u.redisRepo != nil {
@@ -378,7 +531,6 @@ func (u *userUsecase) AdminUpdateUser(input entity.AdminUpdateUserInput) (entity
 		return entity.UserResponse{}, errors.New("pengguna target tidak ditemukan")
 	}
 
-	// Cek unik email jika email diubah
 	if input.Email != user.Email {
 		existingUser, _ := u.userRepo.FindByEmail(input.Email)
 		if existingUser != nil && existingUser.ID != input.UserID {
@@ -428,6 +580,10 @@ func (u *userUsecase) AdminDeleteUser(targetUserID uint) error {
 		return errors.New("gagal menghapus pengguna")
 	}
 
+	if u.sessionRepo != nil {
+		_ = u.sessionRepo.DeleteByUserID(targetUserID)
+	}
+
 	if u.redisRepo != nil {
 		_ = u.redisRepo.DeleteRefreshToken(targetUserID)
 	}
@@ -442,13 +598,11 @@ func (u *userUsecase) GetDashboardStats() (entity.DashboardStats, error) {
 
 // RequestPasswordReset memproses permintaan OTP untuk reset password via email.
 func (u *userUsecase) RequestPasswordReset(email string) error {
-	// 1. Cari user berdasarkan email
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil || user == nil {
 		return errors.New("email tidak terdaftar di sistem")
 	}
 
-	// 2. Generate kode OTP 6 digit
 	otpCode, err := utils.GenerateOTP()
 	if err != nil {
 		return errors.New("gagal menghasilkan kode OTP")
@@ -456,27 +610,22 @@ func (u *userUsecase) RequestPasswordReset(email string) error {
 
 	expiresAt := time.Now().Add(15 * time.Minute)
 
-	// 3. Simpan OTP di Redis jika Redis tersedia (TTL 15 Menit)
 	if u.redisRepo != nil {
 		_ = u.redisRepo.SetCache("reset_code:"+email, otpCode, 15*time.Minute)
 	}
 
-	// 4. Simpan ke database sebagai fallback
 	_ = u.userRepo.SaveResetToken(email, otpCode, expiresAt)
 
-	// 5. Kirim email berisi OTP
 	return utils.SendResetPasswordEmail(email, otpCode)
 }
 
 // ResetPassword memverifikasi OTP dan mengganti password pengguna dengan yang baru.
 func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
-	// 1. Cari user berdasarkan email
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil || user == nil {
 		return errors.New("email tidak terdaftar di sistem")
 	}
 
-	// 2. Verifikasi OTP dari Redis terlebih dahulu jika ada
 	var isValidOTP bool
 	if u.redisRepo != nil {
 		cachedOTP, err := u.redisRepo.GetCache("reset_code:" + email)
@@ -485,7 +634,6 @@ func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
 		}
 	}
 
-	// Fallback ke database jika Redis tidak merespon/offline
 	if !isValidOTP {
 		if user.ResetToken != "" && user.ResetToken == otp {
 			if user.ResetTokenExpiresAt != nil && user.ResetTokenExpiresAt.After(time.Now()) {
@@ -498,7 +646,6 @@ func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
 		return errors.New("kode OTP tidak valid atau sudah kadaluwarsa")
 	}
 
-	// 3. Hash password baru
 	hashedPassword, err := utils.HashPassword(newPassword)
 	if err != nil {
 		return errors.New("gagal mengamankan password baru")
@@ -506,19 +653,16 @@ func (u *userUsecase) ResetPassword(email, otp, newPassword string) error {
 
 	user.Password = hashedPassword
 
-	// 4. Simpan perubahan ke database
 	err = u.userRepo.Update(user)
 	if err != nil {
 		return errors.New("gagal memperbarui password")
 	}
 
-	// 5. Hapus OTP dari Redis & Database
 	if u.redisRepo != nil {
 		_ = u.redisRepo.DeleteCache("reset_code:" + email)
 	}
 	_ = u.userRepo.ClearResetToken(user.ID)
 
-	// 6. Kirim email konfirmasi bahwa password berhasil direset (asynchronous goroutine)
 	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
 
 	return nil
@@ -543,11 +687,14 @@ func (u *userUsecase) AdminResetUserPassword(input entity.AdminResetPasswordInpu
 		return errors.New("gagal memperbarui password pengguna")
 	}
 
+	if u.sessionRepo != nil {
+		_ = u.sessionRepo.DeleteByUserID(input.UserID)
+	}
+
 	if u.redisRepo != nil {
 		_ = u.redisRepo.DeleteRefreshToken(input.UserID)
 	}
 
-	// Kirim email konfirmasi bahwa password berhasil direset oleh Superadmin
 	go utils.SendPasswordChangedSuccessEmail(user.Email, user.Name)
 
 	return nil
@@ -630,4 +777,72 @@ func (u *userUsecase) PermanentDeleteUser(targetUserID uint) error {
 		return errors.New("gagal menghapus pengguna secara permanen")
 	}
 	return nil
+}
+
+// GetActiveSessions mengambil daftar seluruh sesi & perangkat aktif pengguna.
+func (u *userUsecase) GetActiveSessions(userID uint, currentRefreshToken string) ([]entity.UserSessionResponse, error) {
+	if u.sessionRepo == nil {
+		return []entity.UserSessionResponse{}, nil
+	}
+
+	sessions, err := u.sessionRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, errors.New("gagal mengambil daftar sesi aktif")
+	}
+
+	currentHash := ""
+	if currentRefreshToken != "" {
+		currentHash = hashToken(currentRefreshToken)
+	}
+
+	var response []entity.UserSessionResponse
+	for _, sess := range sessions {
+		isCurrent := false
+		if currentHash != "" && sess.RefreshTokenHash == currentHash {
+			isCurrent = true
+		}
+		response = append(response, entity.FormatUserSession(sess, isCurrent))
+	}
+
+	return response, nil
+}
+
+// RevokeSession mencabut sesi spesifik tertentu (Logout perangkat tunggal).
+func (u *userUsecase) RevokeSession(userID, sessionID uint) error {
+	if u.sessionRepo == nil {
+		return nil
+	}
+
+	sess, err := u.sessionRepo.FindByID(sessionID)
+	if err != nil || sess == nil {
+		return errors.New("sesi tidak ditemukan")
+	}
+
+	if sess.UserID != userID {
+		return errors.New("tidak memiliki izin untuk mencabut sesi ini")
+	}
+
+	return u.sessionRepo.Delete(sessionID)
+}
+
+// RevokeOtherSessions mencabut seluruh sesi pengguna selain perangkat yang sedang digunakan saat ini.
+func (u *userUsecase) RevokeOtherSessions(userID uint, currentRefreshToken string) error {
+	if u.sessionRepo == nil {
+		return nil
+	}
+
+	var currentSessionID uint = 0
+	if currentRefreshToken != "" {
+		hash := hashToken(currentRefreshToken)
+		sess, err := u.sessionRepo.FindByRefreshTokenHash(hash)
+		if err == nil && sess != nil {
+			currentSessionID = sess.ID
+		}
+	}
+
+	if currentSessionID != 0 {
+		return u.sessionRepo.DeleteByUserIDExcept(userID, currentSessionID)
+	}
+
+	return u.sessionRepo.DeleteByUserID(userID)
 }

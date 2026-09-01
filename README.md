@@ -67,20 +67,32 @@ projectgolangnyoba/
 - **RBAC (Role-Based Access Control):** Peran hirarki (`superadmin`, `owner`, `admin`, `user`).
 - **Toggle Password Visibility:** Ikon mata interaktif (Eye / Eye-Slash) di seluruh form (Login, Register, Ganti Password, Reset Password).
 
-### 2. Fitur Lupa Password & Reset via Email (OTP 6-Digit)
+### 2. Email Verification & Aktivasi Akun (OTP 6-Digit)
+- **Registrasi dengan Status Verifikasi:** Pengguna baru yang mendaftar memiliki status `is_email_verified = false`.
+- **Pengiriman Kode Aktivasi:** Kode OTP 6-digit dikirimkan melalui email HTML Tailwind CSS (dan dicetak di terminal server jika mode Dev).
+- **Halaman Aktivasi (`/verify-email`):** Input 6-digit OTP responsif, countdown timer 60 detik kirim ulang kode, dan auto-verifikasi via URL query (`?email=...&otp=...`).
+- **Proteksi Login:** Akun yang belum diverifikasi otomatis ditolak saat login dengan tombol instan menuju halaman aktivasi.
+
+### 3. Manajemen Sesi & Perangkat Aktif (Active Sessions & Devices)
+- **Pencatatan Perangkat:** Setiap login mencatat nama peramban, sistem operasi, jenis perangkat (Desktop, Mobile, Tablet), IP address, dan timestamp aktivitas.
+- **Badge Sesi Utama:** Penanda *"Perangkat Ini"* (*Current Session*) pada sesi yang sedang digunakan.
+- **Revoke Sesi:** Pengguna dapat memutuskan sesi tertentu (*"Putuskan Sesi"*) atau memutuskan seluruh perangkat lain sekaligus (*"Putuskan Semua Sesi Lain"*).
+
+### 4. Fitur Lupa Password & Reset via Email (OTP 6-Digit)
 - **Request OTP 6-Digit:** Pengguna meminta OTP yang dikirimkan ke email terdaftar, berlaku selama 15 Menit (disimpan di Redis & PostgreSQL fallback).
 - **Pengiriman Email SMTP / Dev Log:** Menggunakan email HTML Tailwind CSS modern via `net/smtp`. Jika SMTP belum di-set di `.env`, kode OTP otomatis dicetak ke console log terminal untuk kemudahan testing.
 - **Reset Password Form:** Halaman 2-Langkah modern `/forgot-password` untuk menukarkan kode OTP 6-digit dengan kata sandi baru.
 
-### 3. Fitur Khusus Super Admin & Bantuan User
+### 5. Fitur Khusus Super Admin & Bantuan User
 - **Lihat & Kelola Seluruh Pengguna:** Menampilkan tabel seluruh pengguna terdaftar.
 - **Kirim OTP Reset Password (✉️):** Superadmin dapat memicu pengiriman kode OTP reset password ke email pengguna secara otomatis dari tabel.
 - **Reset Password Langsung (🔒):** Memungkinkan Superadmin **langsung mereset password pengguna secara instan tanpa OTP** untuk membantu pengguna yang mengalami kendala/bug pada email.
 - **Tambah & Edit Pengguna:** Membuat dan mengubah data pengguna lain (Nama, Email, Peran, No HP, Gender, Tgl Lahir, Alamat, Bio).
 - **Hapus Pengguna (Soft Delete) & Instant Role Switcher:** Menghapus pengguna (Soft Delete) serta mengubah peran pengguna secara cepat.
 
-### 4. Manajemen Profil & Dashboard Analytics (Chart.js)
+### 6. Manajemen Profil & Dashboard Analytics (Chart.js)
 - **Biodata Lengkap & Upload Avatar:** Mengelola biodata dan mengunggah foto avatar disajikan via static `/images`.
+- **Badge Status Verifikasi:** Status badge hijau *"Email Terverifikasi"* di bagian header profil.
 - **Realtime Stats Cards & Grafik Interaktif:** Doughnut Chart dan Bar Chart untuk visualisasi statistik distribusi peran pengguna.
 
 ---
@@ -89,7 +101,9 @@ projectgolangnyoba/
 
 | Method | Endpoint | Akses | Deskripsi |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/register` | Publik | Registrasi akun baru (Default Role: `user`) |
+| `POST` | `/api/register` | Publik | Registrasi akun baru (Status: Unverified) |
+| `POST` | `/api/verify-email` | Publik | Verifikasi & aktivasi akun via OTP 6-digit |
+| `POST` | `/api/resend-verification` | Publik | Mengirim ulang kode OTP aktivasi akun |
 | `POST` | `/api/login` | Publik | Login & mendapatkan JWT Access/Refresh Token |
 | `POST` | `/api/refresh-token` | Publik | Memperbarui Access Token dengan Refresh Token |
 | `POST` | `/api/forgot-password` | Publik | Meminta kode OTP reset password via email |
@@ -99,6 +113,9 @@ projectgolangnyoba/
 | `POST` | `/api/profile/avatar` | Protected | Mengunggah foto profil avatar baru |
 | `DELETE` | `/api/profile` | Protected | Menghapus akun sendiri (Soft Delete) |
 | `PUT` | `/api/change-password` | Protected | Mengubah kata sandi akun |
+| `GET` | `/api/sessions` | Protected | Mengambil daftar seluruh sesi & perangkat aktif |
+| `DELETE` | `/api/sessions/:id` | Protected | Mencabut sesi pada perangkat tertentu |
+| `POST` | `/api/sessions/revoke-others` | Protected | Mencabut seluruh sesi pada perangkat lain |
 | `POST` | `/api/logout` | Protected | Logout & blacklist token ke Redis |
 | `GET` | `/api/dashboard/stats` | Protected | Mengambil data statistik agregasi dashboard & grafik |
 | `GET` | `/api/admin/users` | Admin & Superadmin | Mengambil daftar seluruh pengguna |
@@ -106,7 +123,7 @@ projectgolangnyoba/
 | `PUT` | `/api/superadmin/users` | Khusus Superadmin | Memperbarui data pengguna lain |
 | `DELETE` | `/api/superadmin/users/:id` | Khusus Superadmin | Menghapus pengguna lain (Soft Delete) |
 | `PUT` | `/api/superadmin/change-role` | Khusus Superadmin | Mengubah Peran (Role) pengguna |
-| `PUT` | `/api/superadmin/users/reset-password` | Khusus Superadmin | **(BARU)** Reset password pengguna secara langsung tanpa OTP |
+| `PUT` | `/api/superadmin/users/reset-password` | Khusus Superadmin | Reset password pengguna secara langsung tanpa OTP |
 
 ---
 

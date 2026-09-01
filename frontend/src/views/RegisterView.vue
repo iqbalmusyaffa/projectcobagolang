@@ -133,15 +133,15 @@ const handleRegister = async () => {
 
     if (res.status === 201 || res.data.status === 'success') {
       alert.isSuccess = true
-      alert.message = 'Registrasi akun berhasil! Mengalihkan ke halaman Login...'
+      alert.message = 'Registrasi berhasil! Kode OTP aktivasi telah dikirim ke email Anda. Mengalihkan ke halaman verifikasi...'
 
       setTimeout(() => {
-        router.push('/login')
-      }, 1200)
+        router.push({ path: '/verify-email', query: { email: email.value } })
+      }, 1500)
     }
   } catch (err) {
     alert.isSuccess = false
-    alert.message = err.response?.data?.message || 'Gagal registrasi'
+    alert.message = err.response?.data?.message || 'Gagal registrasi akun'
   } finally {
     isLoading.value = false
   }

@@ -30,9 +30,14 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	redisRepo := repository.NewRedisRepository(rdb)
 	auditRepo := repository.NewAuditLogRepository(db)
+	settingRepo := repository.NewSettingRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
 
-	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo, auditRepo)
+	userUsecase := usecase.NewUserUsecase(userRepo, redisRepo, auditRepo, sessionRepo)
 	userHandler := handler.NewUserHandler(userUsecase)
+
+	settingUsecase := usecase.NewSettingUsecase(settingRepo, auditRepo)
+	settingHandler := handler.NewSettingHandler(settingUsecase, userUsecase)
 
 	// 3. Inisialisasi Router Gin & Global Middleware
 	r := gin.Default()
@@ -55,6 +60,9 @@ func main() {
 	r.GET("/register", func(c *gin.Context) {
 		c.Redirect(302, fmt.Sprintf("%s/register", frontendURL))
 	})
+	r.GET("/verify-email", func(c *gin.Context) {
+		c.Redirect(302, fmt.Sprintf("%s/verify-email", frontendURL))
+	})
 	r.GET("/dashboard", func(c *gin.Context) {
 		c.Redirect(302, fmt.Sprintf("%s/dashboard", frontendURL))
 	})
@@ -63,6 +71,8 @@ func main() {
 	api := r.Group("/api")
 	{
 		api.POST("/register", userHandler.Register)
+		api.POST("/verify-email", userHandler.VerifyEmail)
+		api.POST("/resend-verification", userHandler.ResendVerification)
 		api.POST("/login", userHandler.Login)
 		api.POST("/refresh-token", userHandler.RefreshToken)
 		api.POST("/forgot-password", userHandler.ForgotPassword)
@@ -81,6 +91,12 @@ func main() {
 		protected.PUT("/change-password", userHandler.ChangePassword)
 		protected.GET("/dashboard/stats", userHandler.GetDashboardStats)
 		protected.GET("/audit-logs/my", userHandler.GetMyAuditLogs)
+		protected.GET("/settings", settingHandler.GetSettings)
+
+		// Rute Manajemen Sesi & Perangkat Aktif
+		protected.GET("/sessions", userHandler.GetActiveSessions)
+		protected.DELETE("/sessions/:id", userHandler.RevokeSession)
+		protected.POST("/sessions/revoke-others", userHandler.RevokeOtherSessions)
 
 		// Rute Khusus Peran Superadmin & Owner
 		adminGroup := protected.Group("/admin")
@@ -89,6 +105,9 @@ func main() {
 			adminGroup.GET("/users", userHandler.GetAllUsers)
 			adminGroup.GET("/users/trashed", userHandler.GetTrashedUsers)
 			adminGroup.GET("/audit-logs", userHandler.GetAllAuditLogs)
+			adminGroup.PUT("/settings", settingHandler.UpdateSettings)
+			adminGroup.POST("/settings/test-email", settingHandler.TestEmail)
+			adminGroup.POST("/settings/logo", settingHandler.UploadLogo)
 		}
 
 		// Rute Khusus Peran Superadmin Sahaja

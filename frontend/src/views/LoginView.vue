@@ -27,10 +27,20 @@
 
       <!-- Alert -->
       <div v-if="alert.message" :class="[
-        'mb-4 p-3 rounded-lg text-sm border',
-        alert.isSuccess ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+        'mb-4 p-3.5 rounded-xl text-sm border transition-all',
+        alert.isSuccess ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/60'
       ]">
-        {{ alert.message }}
+        <div class="font-medium text-xs leading-relaxed">{{ alert.message }}</div>
+        
+        <!-- Button aktivasi jika email belum diverifikasi -->
+        <div v-if="alert.isUnverified" class="mt-2.5 pt-2 border-t border-rose-200 dark:border-rose-800/50">
+          <router-link
+            :to="{ path: '/verify-email', query: { email: email } }"
+            class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-xs transition shadow-sm"
+          >
+            <span>Verifikasi Akun Sekarang &rarr;</span>
+          </router-link>
+        </div>
       </div>
 
       <!-- Form Login Vue 3 -->
@@ -96,13 +106,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import api from '../services/api'
 import { useTheme } from '../utils/theme'
 
 const { isDarkMode, toggleTheme } = useTheme()
 const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -110,12 +121,14 @@ const isLoading = ref(false)
 
 const alert = reactive({
   message: '',
-  isSuccess: false
+  isSuccess: false,
+  isUnverified: false
 })
 
 const handleLogin = async () => {
   isLoading.value = true
   alert.message = ''
+  alert.isUnverified = false
 
   try {
     const res = await api.post('/login', {
@@ -142,9 +155,24 @@ const handleLogin = async () => {
     }
   } catch (err) {
     alert.isSuccess = false
-    alert.message = err.response?.data?.message || 'Email atau password salah'
+    const errMsg = err.response?.data?.message || 'Email atau password salah'
+    alert.message = errMsg
+    if (err.response?.data?.is_unverified || errMsg.includes('UNVERIFIED_EMAIL')) {
+      alert.isUnverified = true
+      alert.message = 'Akun Anda belum diverifikasi. Silakan aktivasi email Anda terlebih dahulu.'
+    }
   } finally {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  if (route.query.email) {
+    email.value = String(route.query.email)
+  }
+  if (route.query.verified === 'true') {
+    alert.isSuccess = true
+    alert.message = 'Akun Anda telah berhasil diaktivasi! Silakan login untuk melanjutkan.'
+  }
+})
 </script>
