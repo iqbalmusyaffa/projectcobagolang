@@ -19,6 +19,8 @@ type UserRepository interface {
 	GetDashboardStats() (entity.DashboardStats, error)
 	SaveResetToken(email, token string, expiresAt time.Time) error
 	ClearResetToken(userID uint) error
+	SaveVerificationToken(email, token string, expiresAt time.Time) error
+	MarkEmailVerified(userID uint) error
 	FindTrashedUsers() ([]entity.User, error)
 	RestoreUser(userID uint) error
 	PermanentDeleteUser(userID uint) error
@@ -89,6 +91,25 @@ func (r *userRepository) ClearResetToken(userID uint) error {
 	return r.db.Model(&entity.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
 		"reset_token":            "",
 		"reset_token_expires_at": nil,
+	}).Error
+}
+
+// SaveVerificationToken menyimpan token OTP verifikasi email & masa berlakunya ke database.
+func (r *userRepository) SaveVerificationToken(email, token string, expiresAt time.Time) error {
+	return r.db.Model(&entity.User{}).Where("email = ?", email).Updates(map[string]interface{}{
+		"verification_token":            token,
+		"verification_token_expires_at": expiresAt,
+	}).Error
+}
+
+// MarkEmailVerified memperbarui status verifikasi email menjadi aktif (true) dan mencatat waktu verifikasi.
+func (r *userRepository) MarkEmailVerified(userID uint) error {
+	now := time.Now()
+	return r.db.Model(&entity.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"is_email_verified":             true,
+		"email_verified_at":             &now,
+		"verification_token":            "",
+		"verification_token_expires_at": nil,
 	}).Error
 }
 

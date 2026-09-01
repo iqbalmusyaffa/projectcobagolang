@@ -115,17 +115,20 @@ func seedUser(db *gorm.DB, u entity.User) {
 		}
 
 		birthDate, _ := time.Parse("2006-01-02", "1995-08-17")
+		now := time.Now()
 
 		newUser := entity.User{
-			Name:      u.Name,
-			Email:     u.Email,
-			Password:  hashedPassword,
-			Role:      u.Role,
-			Phone:     u.Phone,
-			Gender:    u.Gender,
-			BirthDate: &birthDate,
-			Address:   u.Address,
-			Bio:       u.Bio,
+			Name:            u.Name,
+			Email:           u.Email,
+			Password:        hashedPassword,
+			Role:            u.Role,
+			Phone:           u.Phone,
+			Gender:          u.Gender,
+			BirthDate:       &birthDate,
+			Address:         u.Address,
+			Bio:             u.Bio,
+			IsEmailVerified: true,
+			EmailVerifiedAt: &now,
 		}
 
 		if err := db.Create(&newUser).Error; err != nil {
@@ -135,11 +138,21 @@ func seedUser(db *gorm.DB, u entity.User) {
 
 		fmt.Printf("⚡ Database Seeder: Akun [%s] - %s berhasil dibuat! (Default Pass: password123)\n", u.Role, u.Email)
 	} else {
-		// Jika user sudah ada, pastikan role & data dasar tidak kosong
+		// Jika user sudah ada, pastikan role, data dasar, dan verifikasi email aktif
+		updated := false
 		if existingUser.Role != u.Role && u.Role != "" {
 			existingUser.Role = u.Role
+			updated = true
+		}
+		if !existingUser.IsEmailVerified {
+			now := time.Now()
+			existingUser.IsEmailVerified = true
+			existingUser.EmailVerifiedAt = &now
+			updated = true
+		}
+		if updated {
 			db.Save(&existingUser)
-			fmt.Printf("⚡ Database Seeder: Role akun %s diperbarui menjadi '%s'\n", u.Email, u.Role)
+			fmt.Printf("⚡ Database Seeder: Data & Role akun %s diperbarui\n", u.Email)
 		}
 	}
 }

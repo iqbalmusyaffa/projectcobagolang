@@ -21,9 +21,24 @@ type User struct {
 	Bio       string         `gorm:"type:text" json:"bio"`
 	ResetToken          string     `gorm:"type:varchar(255)" json:"-"`
 	ResetTokenExpiresAt *time.Time `json:"-"`
+	IsEmailVerified     bool       `gorm:"default:false;not null" json:"is_email_verified"`
+	VerificationToken   string     `gorm:"type:varchar(255)" json:"-"`
+	VerificationTokenExpiresAt *time.Time `json:"-"`
+	EmailVerifiedAt     *time.Time `json:"email_verified_at"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// VerifyEmailInput melambangkan data JSON saat memverifikasi akun via kode OTP.
+type VerifyEmailInput struct {
+	Email string `json:"email" binding:"required,email"`
+	OTP   string `json:"otp" binding:"required,len=6"`
+}
+
+// ResendVerificationInput melambangkan data JSON saat meminta kirim ulang kode aktivasi email.
+type ResendVerificationInput struct {
+	Email string `json:"email" binding:"required,email"`
 }
 
 // ForgotPasswordInput melambangkan data JSON saat meminta kode reset password.
@@ -54,18 +69,20 @@ type LoginInput struct {
 
 // UserResponse melambangkan data JSON kembalian ke client setelah berhasil Auth.
 type UserResponse struct {
-	ID        uint      `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"`
-	Avatar    string    `json:"avatar"`
-	Phone     string    `json:"phone"`
-	Gender    string    `json:"gender"`
-	BirthDate string    `json:"birth_date"`
-	Address   string    `json:"address"`
-	Bio       string    `json:"bio"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID              uint       `json:"id"`
+	Name            string     `json:"name"`
+	Email           string     `json:"email"`
+	Role            string     `json:"role"`
+	Avatar          string     `json:"avatar"`
+	Phone           string     `json:"phone"`
+	Gender          string     `json:"gender"`
+	BirthDate       string     `json:"birth_date"`
+	Address         string     `json:"address"`
+	Bio             string     `json:"bio"`
+	IsEmailVerified bool       `json:"is_email_verified"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 // UpdateProfileInput melambangkan data JSON saat mengedit profil.
@@ -150,17 +167,19 @@ func FormatUser(user User) UserResponse {
 		birthDateStr = user.BirthDate.Format("2006-01-02")
 	}
 	return UserResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Role:      role,
-		Avatar:    user.Avatar,
-		Phone:     user.Phone,
-		Gender:    user.Gender,
-		BirthDate: birthDateStr,
-		Address:   user.Address,
-		Bio:       user.Bio,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:              user.ID,
+		Name:            user.Name,
+		Email:           user.Email,
+		Role:            role,
+		Avatar:          user.Avatar,
+		Phone:           user.Phone,
+		Gender:          user.Gender,
+		BirthDate:       birthDateStr,
+		Address:         user.Address,
+		Bio:             user.Bio,
+		IsEmailVerified: user.IsEmailVerified,
+		EmailVerifiedAt: user.EmailVerifiedAt,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
 	}
 }

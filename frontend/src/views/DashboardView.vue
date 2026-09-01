@@ -46,6 +46,17 @@
             <span>Profil Saya</span>
           </a>
 
+          <!-- Halaman Sesi & Perangkat Aktif (Semua User) -->
+          <a href="#" @click.prevent="activeTab = 'sessions'" :class="[
+            'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
+            activeTab === 'sessions' ? 'bg-cyan-50 dark:bg-slate-800 text-cyan-600 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-cyan-500 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span>Sesi & Perangkat</span>
+          </a>
+
           <!-- Halaman Catatan Aktivitas (Khusus Superadmin & Owner) -->
           <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'logs'" :class="[
             'flex items-center space-x-3 px-3 py-2.5 rounded-lg font-medium text-sm transition',
@@ -136,6 +147,17 @@
             <span>Profil Saya</span>
           </a>
 
+          <!-- Sesi & Perangkat Mobile -->
+          <a href="#" @click.prevent="activeTab = 'sessions'; isMobileSidebarOpen = false" :class="[
+            'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
+            activeTab === 'sessions' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ]">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <span>Sesi & Perangkat</span>
+          </a>
+
           <!-- Catatan Aktivitas Mobile (Khusus Superadmin & Owner) -->
           <a v-if="canManageUsers" href="#" @click.prevent="activeTab = 'logs'; isMobileSidebarOpen = false" :class="[
             'flex items-center space-x-3 px-3 py-3 rounded-lg font-medium text-sm transition',
@@ -184,7 +206,7 @@
           </button>
 
           <h1 class="text-base sm:text-xl font-bold text-slate-800 dark:text-white truncate">
-            {{ activeTab === 'users' ? 'Manajemen Pengguna (RBAC)' : activeTab === 'profile' ? 'Pengaturan Profil Saya' : 'Overview Dashboard Vue 3' }}
+            {{ activeTab === 'users' ? 'Manajemen Pengguna (RBAC)' : activeTab === 'profile' ? 'Pengaturan Profil Saya' : activeTab === 'sessions' ? 'Sesi & Perangkat Aktif' : activeTab === 'logs' ? 'Catatan Aktivitas Sistem' : activeTab === 'settings' ? 'Pengaturan Sistem' : 'Overview Dashboard Vue 3' }}
           </h1>
         </div>
 
@@ -524,8 +546,21 @@
                 <div>
                   <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ user.name || '-' }}</h2>
                   <p class="text-sm text-slate-500 dark:text-slate-400">{{ user.email || '-' }}</p>
-                  <div class="mt-2 flex items-center space-x-2">
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
                     <span :class="roleBadgeClass(user.role)">Peran: {{ (user.role || 'admin').toUpperCase() }}</span>
+                    <!-- Email Verified Badge -->
+                    <span v-if="user.is_email_verified" class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <span>Email Terverifikasi</span>
+                    </span>
+                    <span v-else class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                      </svg>
+                      <span>Belum Terverifikasi</span>
+                    </span>
                     <span v-if="user.updated_at" class="text-[11px] text-slate-400">Diuji: {{ new Date(user.updated_at).toLocaleDateString('id-ID') }}</span>
                   </div>
                 </div>
@@ -818,7 +853,21 @@
                   <tr v-for="u in allUsers" :key="u.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                     <td class="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">#{{ u.id }}</td>
                     <td class="py-3 px-4 font-semibold text-slate-800 dark:text-white">{{ u.name }}</td>
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300">{{ u.email }}</td>
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      <div class="flex items-center space-x-1.5">
+                        <span>{{ u.email }}</span>
+                        <span v-if="u.is_email_verified" title="Email Terverifikasi" class="text-emerald-500 shrink-0">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
+                        <span v-else title="Belum Terverifikasi" class="text-amber-500 shrink-0">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                          </svg>
+                        </span>
+                      </div>
+                    </td>
                     <td class="py-3 px-4">
                       <span :class="roleBadgeClass(u.role)">{{ (u.role || 'admin').toUpperCase() }}</span>
                     </td>
@@ -1269,6 +1318,156 @@
                   <label for="enable_email" class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
                     Aktifkan Notifikasi Email Otomatis (OTP Reset Password & Konfirmasi Keberhasilan Ganti Password)
                   </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- TAB 6: MANAJEMEN SESI & PERANGKAT AKTIF (SEMUA PENGGUNA) -->
+        <template v-if="activeTab === 'sessions'">
+          <div class="space-y-6">
+            <!-- Header Banner -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <div class="p-2 bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Sesi & Perangkat Aktif</h2>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Daftar peramban (browser) dan perangkat yang saat ini memiliki akses login aktif ke akun Anda.</p>
+              </div>
+
+              <div class="flex items-center space-x-2 shrink-0">
+                <button
+                  type="button"
+                  @click="fetchActiveSessions"
+                  class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+                  title="Segarkan Daftar Sesi"
+                >
+                  <svg :class="['w-4 h-4', isLoadingSessions ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  @click="handleRevokeOtherSessions"
+                  :disabled="isRevokingOthers || activeSessionsList.length <= 1"
+                  class="px-3.5 py-2 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  </svg>
+                  <span>{{ isRevokingOthers ? 'Memutuskan...' : 'Putuskan Semua Sesi Lain' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="isLoadingSessions" class="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div class="inline-block animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full mb-3"></div>
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Memuat data sesi perangkat aktif...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="activeSessionsList.length === 0" class="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+              <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada sesi aktif yang ditemukan.</p>
+            </div>
+
+            <!-- List Grid of Active Sessions -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                v-for="sess in activeSessionsList"
+                :key="sess.id"
+                :class="[
+                  'p-5 rounded-xl border transition-all flex flex-col justify-between',
+                  sess.is_current_session 
+                    ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/80 shadow-sm ring-1 ring-emerald-400/30' 
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                ]"
+              >
+                <div>
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                      <!-- Device Icon -->
+                      <div :class="[
+                        'p-2.5 rounded-xl shrink-0',
+                        sess.device_type === 'mobile' 
+                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400' 
+                          : sess.device_type === 'tablet' 
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400' 
+                          : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400'
+                      ]">
+                        <!-- Smartphone Icon -->
+                        <svg v-if="sess.device_type === 'mobile'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        <!-- Tablet Icon -->
+                        <svg v-else-if="sess.device_type === 'tablet'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        <!-- Desktop / Laptop Icon -->
+                        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                      </div>
+
+                      <div>
+                        <div class="flex items-center space-x-2">
+                          <h4 class="text-sm font-bold text-slate-900 dark:text-white">{{ sess.device_name || 'Perangkat Web' }}</h4>
+                          <!-- Current Device Badge -->
+                          <span v-if="sess.is_current_session" class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Perangkat Ini</span>
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ sess.browser }} &bull; {{ sess.os }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Details (IP, Last Active, Created) -->
+                  <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400">Alamat IP:</span>
+                      <span class="font-mono font-medium">{{ sess.ip_address || '127.0.0.1' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400">Terakhir Aktif:</span>
+                      <span class="font-medium text-slate-700 dark:text-slate-200">
+                        {{ sess.is_current_session ? 'Sedang Aktif Sekarang' : new Date(sess.last_active_at).toLocaleString('id-ID') }}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400">Login Pertama:</span>
+                      <span class="font-medium text-slate-500">{{ new Date(sess.created_at).toLocaleString('id-ID') }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card Actions -->
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                  <span v-if="sess.is_current_session" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center space-x-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <span>Sesi Utama Saat Ini</span>
+                  </span>
+                  <button
+                    v-else
+                    type="button"
+                    @click="handleRevokeSession(sess.id)"
+                    class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition ml-auto flex items-center space-x-1 cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    <span>Putuskan Sesi</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2031,6 +2230,8 @@ const user = reactive({
   birth_date: '',
   address: '',
   bio: '',
+  is_email_verified: false,
+  email_verified_at: null,
   created_at: '',
   updated_at: ''
 })
@@ -2167,6 +2368,8 @@ const loadUserProfile = async () => {
     user.birth_date = data.birth_date || ''
     user.address = data.address || ''
     user.bio = data.bio || ''
+    user.is_email_verified = !!data.is_email_verified
+    user.email_verified_at = data.email_verified_at || null
     user.created_at = data.created_at
     user.updated_at = data.updated_at
 
@@ -2283,6 +2486,8 @@ const handleUpdateProfile = async () => {
     user.birth_date = d.birth_date || ''
     user.address = d.address || ''
     user.bio = d.bio || ''
+    user.is_email_verified = !!d.is_email_verified
+    user.email_verified_at = d.email_verified_at || null
     user.updated_at = d.updated_at
     showAlert('Profil Vue 3 Anda berhasil diperbarui!', true)
   } catch (err) {
@@ -2583,6 +2788,64 @@ const filteredAuditLogs = computed(() => {
   )
 })
 
+// Active Sessions & Devices Management State
+const activeSessionsList = ref([])
+const isLoadingSessions = ref(false)
+const isRevokingOthers = ref(false)
+
+const fetchActiveSessions = async () => {
+  isLoadingSessions.value = true
+  try {
+    const refreshToken = localStorage.getItem('refresh_token') || ''
+    const res = await api.get('/sessions', {
+      params: {
+        refresh_token: refreshToken
+      },
+      headers: {
+        'X-Refresh-Token': refreshToken
+      }
+    })
+    activeSessionsList.value = res.data.data || []
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal mengambil data sesi aktif', false)
+  } finally {
+    isLoadingSessions.value = false
+  }
+}
+
+const handleRevokeSession = async (sessionID) => {
+  if (!confirm('Apakah Anda yakin ingin memutuskan sesi perangkat ini?')) return
+  try {
+    await api.delete(`/sessions/${sessionID}`)
+    showAlert('Sesi perangkat berhasil diputuskan!', true)
+    await fetchActiveSessions()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal memutuskan sesi', false)
+  }
+}
+
+const handleRevokeOtherSessions = async () => {
+  if (!confirm('Apakah Anda yakin ingin mengeluarkan akun Anda dari SEMUA perangkat lain?')) return
+  isRevokingOthers.value = true
+  try {
+    const refreshToken = localStorage.getItem('refresh_token') || ''
+    await api.post('/sessions/revoke-others', { refresh_token: refreshToken }, {
+      params: {
+        refresh_token: refreshToken
+      },
+      headers: {
+        'X-Refresh-Token': refreshToken
+      }
+    })
+    showAlert('Semua sesi perangkat lain telah berhasil diputuskan!', true)
+    await fetchActiveSessions()
+  } catch (err) {
+    showAlert(err.response?.data?.message || 'Gagal memutuskan sesi lain', false)
+  } finally {
+    isRevokingOthers.value = false
+  }
+}
+
 watch(isDarkMode, () => {
   renderCharts()
 })
@@ -2593,6 +2856,8 @@ watch(activeTab, (newTab) => {
   } else if (newTab === 'users') {
     loadAllUsers()
     loadTrashedUsers()
+  } else if (newTab === 'sessions') {
+    fetchActiveSessions()
   } else if (newTab === 'logs') {
     loadAuditLogs()
   } else if (newTab === 'settings') {
@@ -2608,6 +2873,9 @@ const handleSyncData = async () => {
     if (canManageUsers.value) {
       await loadAllUsers()
       await loadTrashedUsers()
+    }
+    if (activeTab.value === 'sessions') {
+      await fetchActiveSessions()
     }
     await loadAuditLogs()
     showAlert('Data & statistik berhasil disinkronkan dari database PostgreSQL!', true)

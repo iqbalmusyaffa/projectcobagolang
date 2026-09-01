@@ -294,3 +294,113 @@ func SendPasswordChangedSuccessEmail(toEmail, userName string) error {
 	log.Printf("📧 Email konfirmasi ganti password berhasil dikirim ke %s via SMTP (%s)", toEmail, addr)
 	return nil
 }
+
+// SendVerificationEmail mengirimkan email berisi kode OTP 6-digit untuk aktivasi akun baru.
+func SendVerificationEmail(toEmail, otpCode string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	senderEmail := os.Getenv("SMTP_SENDER_EMAIL")
+	senderPassword := os.Getenv("SMTP_SENDER_PASSWORD")
+
+	// Selalu cetak ke log terminal server untuk kemudahan dev/testing
+	log.Printf("==================================================")
+	log.Printf("📩 [EMAIL VERIFICATION OTP] Email: %s | OTP Code: %s", toEmail, otpCode)
+	log.Printf("==================================================")
+
+	// Jika SMTP credentials tidak lengkap, gunakan mode DEV (Console Log Only)
+	if smtpHost == "" || smtpPort == "" || senderEmail == "" || senderPassword == "" {
+		log.Printf("ℹ️ SMTP tidak dikonfigurasi penuh di .env. Menggunakan mode Dev Log.")
+		return nil
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	verifyURL := fmt.Sprintf("%s/verify-email?email=%s&otp=%s", frontendURL, toEmail, otpCode)
+
+	subject := "Subject: ✨ Kode Aktivasi & Verifikasi Akun Anda - TailAdmin Vue 3\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	body := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html lang="id">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Aktivasi Akun</title>
+		</head>
+		<body style="background-color: #f1f5f9; padding: 24px; font-family: ui-sans-serif, system-ui, sans-serif; color: #1e293b; margin: 0;">
+			<div style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+				<div style="background: linear-gradient(135deg, #6366f1 0%%, #4338ca 100%%); padding: 32px; text-align: center; color: #ffffff;">
+					<div style="display: inline-block; background-color: rgba(255,255,255,0.2); color: #ffffff; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px;">
+						TailAdmin Vue 3
+					</div>
+					<h1 style="font-size: 22px; font-weight: 700; color: #ffffff; margin: 0;">
+						Aktivasi & Verifikasi Akun
+					</h1>
+				</div>
+
+				<div style="padding: 28px;">
+					<p style="font-size: 14px; color: #334155; margin: 0;">
+						Halo <b style="color: #0f172a;">%s</b>,
+					</p>
+					
+					<p style="font-size: 14px; color: #475569; line-height: 1.6; margin-top: 12px;">
+						Terima kasih telah mendaftar di sistem kami! Silakan gunakan kode OTP 6-digit berikut untuk memverifikasi dan mengaktifkan akun Anda:
+					</p>
+
+					<div style="margin: 24px 0; padding: 20px; background-color: #eef2ff; border: 2px dashed #6366f1; border-radius: 12px; text-align: center;">
+						<div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #4f46e5; letter-spacing: 0.1em; margin-bottom: 4px;">
+							Kode OTP Aktivasi Akun
+						</div>
+						<div style="font-size: 32px; font-weight: 800; color: #312e81; letter-spacing: 8px; font-family: monospace;">
+							%s
+						</div>
+					</div>
+
+					<div style="text-align: center; margin: 24px 0;">
+						<a href="%s" style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: #ffffff !important; font-weight: 600; font-size: 14px; border-radius: 8px; text-decoration: none;">
+							Verifikasi Akun Sekarang &rarr;
+						</a>
+					</div>
+
+					<div style="padding: 14px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; font-size: 12px; color: #78350f; line-height: 1.5; margin-top: 20px;">
+						<strong style="display: block; font-weight: 700; margin-bottom: 4px;">🔒 Informasi Keamanan:</strong>
+						• Kode verifikasi berlaku selama <b>15 Menit</b>.<br>
+						• Jangan berikan kode ini kepada siapa pun.<br>
+						• Jika Anda tidak pernah mendaftar di layanan kami, silakan abaikan email ini.
+					</div>
+				</div>
+
+				<div style="background-color: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
+					Vue 3 + TailAdmin Dashboard &bull; Golang Clean Architecture &copy; 2026
+				</div>
+			</div>
+		</body>
+		</html>
+	`, toEmail, otpCode, verifyURL)
+
+	smtpUser := os.Getenv("SMTP_USER")
+	if smtpUser == "" {
+		smtpUser = senderEmail
+	}
+
+	msg := []byte(subject + mime + body)
+	auth := smtp.PlainAuth("", smtpUser, senderPassword, smtpHost)
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+
+	var err error
+	if smtpPort == "465" {
+		err = sendMailSSL(addr, smtpHost, auth, senderEmail, []string{toEmail}, msg)
+	} else {
+		err = smtp.SendMail(addr, auth, senderEmail, []string{toEmail}, msg)
+	}
+
+	if err != nil {
+		log.Printf("⚠️ Gagal mengirim email aktivasi via SMTP (%s): %v", addr, err)
+		return nil
+	}
+
+	log.Printf("📧 Email aktivasi berhasil dikirim ke %s via SMTP (%s)", toEmail, addr)
+	return nil
+}

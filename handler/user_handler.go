@@ -52,8 +52,62 @@ func (h *UserHandler) Register(c *gin.Context) {
 	// 3. Kembalikan respons sukses 201 Created
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  "success",
-		"message": "Registrasi akun berhasil",
+		"message": "Registrasi akun berhasil! Kode OTP aktivasi telah dikirim ke email Anda.",
 		"data":    userResponse,
+	})
+}
+
+// VerifyEmail handler untuk endpoint POST /api/verify-email
+func (h *UserHandler) VerifyEmail(c *gin.Context) {
+	var input entity.VerifyEmailInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Email dan kode OTP 6-digit wajib diisi",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err := h.userUsecase.VerifyEmail(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Akun Anda berhasil diverifikasi! Silakan login untuk melanjutkan.",
+	})
+}
+
+// ResendVerification handler untuk endpoint POST /api/resend-verification
+func (h *UserHandler) ResendVerification(c *gin.Context) {
+	var input entity.ResendVerificationInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Alamat email wajib diisi",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	err := h.userUsecase.ResendVerification(input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Kode OTP aktivasi baru berhasil dikirim ke email Anda.",
 	})
 }
 
@@ -71,12 +125,18 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
+	ipAddress := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+
 	// 2. Panggil Usecase untuk login & dapatkan Access & Refresh Token
-	tokenPair, err := h.userUsecase.Login(input)
+	tokenPair, err := h.userUsecase.Login(input, ipAddress, userAgent)
 	if err != nil {
+		isUnverified := strings.Contains(err.Error(), "UNVERIFIED_EMAIL")
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"status":  "error",
-			"message": err.Error(),
+			"status":        "error",
+			"message":       err.Error(),
+			"is_unverified": isUnverified,
+			"email":         input.Email,
 		})
 		return
 	}
@@ -86,7 +146,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if claims != nil {
 		user, err := h.userUsecase.GetProfile(claims.UserID)
 		if err == nil {
-			go h.userUsecase.LogActivity(user.ID, user.Name, user.Role, "Berhasil Login ke sistem", c.ClientIP(), c.Request.UserAgent())
+			go h.userUsecase.LogActivity(user.ID, user.Name, user.Role, "Berhasil Login ke sistem", ipAddress, userAgent)
 		}
 	}
 
@@ -723,6 +783,117 @@ func (h *UserHandler) PermanentDeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Pengguna berhasil dihapus secara permanen dari database",
+	})
+}
+
+// GetActiveSessions handler untuk endpoint GET /api/sessions
+func (h *UserHandler) GetActiveSessions(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+
+	currentRefreshToken := c.GetHeader("X-Refresh-Token")
+	if currentRefreshToken == "" {
+		currentRefreshToken = c.Query("refresh_token")
+	}
+
+	sessions, err := h.userUsecase.GetActiveSessions(userID.(uint), currentRefreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Daftar sesi aktif berhasil diambil",
+		"data":    sessions,
+	})
+}
+
+// RevokeSession handler untuk endpoint DELETE /api/sessions/:id
+func (h *UserHandler) RevokeSession(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+
+	sessionIDStr := c.Param("id")
+	sessionID, err := strconv.ParseUint(sessionIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "ID sesi tidak valid",
+		})
+		return
+	}
+
+	err = h.userUsecase.RevokeSession(userID.(uint), uint(sessionID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Log activity
+	user, errProfile := h.userUsecase.GetProfile(userID.(uint))
+	if errProfile == nil {
+		go h.userUsecase.LogActivity(user.ID, user.Name, user.Role, fmt.Sprintf("Memutuskan sesi perangkat #%d", sessionID), c.ClientIP(), c.Request.UserAgent())
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Sesi perangkat berhasil diputuskan",
+	})
+}
+
+// RevokeOtherSessions handler untuk endpoint POST /api/sessions/revoke-others
+func (h *UserHandler) RevokeOtherSessions(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Pengguna tidak terautentikasi",
+		})
+		return
+	}
+
+	currentRefreshToken := c.GetHeader("X-Refresh-Token")
+	if currentRefreshToken == "" {
+		currentRefreshToken = c.Query("refresh_token")
+	}
+
+	err := h.userUsecase.RevokeOtherSessions(userID.(uint), currentRefreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Log activity
+	user, errProfile := h.userUsecase.GetProfile(userID.(uint))
+	if errProfile == nil {
+		go h.userUsecase.LogActivity(user.ID, user.Name, user.Role, "Memutuskan seluruh sesi perangkat lain", c.ClientIP(), c.Request.UserAgent())
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Semua sesi perangkat lain berhasil diputuskan",
 	})
 }
 
